@@ -77,7 +77,7 @@ def build(domain_id, region_label, box, start, end, user_inputs=None,
 
     blockers = [a["label"] for a in axes if a["critical"] and a["status"] in BLOCKING]
     abstained = bool(blockers)
-    reason = ("Cannot give a number because these critical factors are unknown here: "
+    reason = ("Cannot give a number. These critical factors are unknown here: "
               + ", ".join(blockers) + ".") if abstained else None
     rw = _risk_window(series, dom.get("risk_window_rule")) if abstained else None
 
