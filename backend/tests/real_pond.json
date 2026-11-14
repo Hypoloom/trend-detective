@@ -1,161 +1,644 @@
 {
-  "_fixture_note": "SYNTHETIC stand-in built from the documented answer.build() shape. Replace with real output: python answer.py pond > tests/real_pond.json",
-  "domain": "pond",
-  "region": "Maharashtra",
-  "axes": [
-    {
-      "name": "air_temperature",
-      "label": "Air temperature",
-      "source": "nasa_data",
-      "critical": false,
-      "status": "analyzed",
-      "result": {
-        "verdict": {
-          "code": "no_trend",
-          "label": "No trend found (not proof of absence)",
-          "summary": "Trends found here do not show cause."
-        },
-        "years": {
-          "have": 46,
-          "needed_low": 30,
-          "needed_mid": 50,
-          "needed_high": 80,
-          "needed_for_meaningful": 70,
-          "meaningful_slope": 0.02
-        },
-        "trend": {
-          "slope_per_year": 0.004480123456789,
-          "slope_ci": [
-            -0.000312345678,
-            0.009112345678
-          ],
-          "p_value": 0.2371234567,
-          "min_detectable_slope": 0.012812345678,
-          "units": "K"
-        },
-        "noise": {
-          "sigma": 0.3112345678,
-          "lag1_autocorr": 0.1198765432
-        },
-        "provenance": {
-          "dataset": "MERRA-2",
-          "variable": "t2m",
-          "region": "Maharashtra",
-          "start": 1980,
-          "end": 2025,
-          "simulated": false
-        },
-        "caveats": [
-          "Values are anomalies, not absolute temperatures."
-        ],
-        "tested_count": 2
+ "domain": "pond",
+ "region": "Maharashtra",
+ "axes": [
+  {
+   "name": "air_temp",
+   "label": "Air temperature",
+   "source": "nasa_data",
+   "critical": false,
+   "status": "analyzed",
+   "result": {
+    "verdict": {
+     "code": "no_trend",
+     "label": "No trend found",
+     "summary": "No trend was found even with a long record. That is not proof that nothing is happening. A trend larger than about 0.013 K per year would probably have been detected."
+    },
+    "years": {
+     "have": 45.9,
+     "needed_low": 71.2,
+     "needed_mid": 98.1,
+     "needed_high": 185.1,
+     "needed_for_meaningful": 34.2,
+     "meaningful_slope": 0.02
+    },
+    "trend": {
+     "slope_per_year": 0.00448129,
+     "slope_ci": [
+      -0.00030422,
+      0.00911664
+     ],
+     "ols_slope_per_year": 0.00411417,
+     "p_value": 0.2366,
+     "p_value_method": "Mann-Kendall (Kendall tau) on annual means",
+     "min_detectable_slope": 0.012839,
+     "units": "K"
+    },
+    "noise": {
+     "sigma": 0.7887,
+     "lag1_autocorr": 0.404
+    },
+    "chart": {
+     "points": [
+      {
+       "year": 1980.5,
+       "value": 0.045484
+      },
+      {
+       "year": 1981.5,
+       "value": -0.558595
+      },
+      {
+       "year": 1982.5,
+       "value": -0.141128
+      },
+      {
+       "year": 1983.5,
+       "value": -0.335583
+      },
+      {
+       "year": 1984.5,
+       "value": 0.138429
+      },
+      {
+       "year": 1985.5,
+       "value": 0.117823
+      },
+      {
+       "year": 1986.5,
+       "value": 0.357676
+      },
+      {
+       "year": 1987.5,
+       "value": 0.149625
+      },
+      {
+       "year": 1988.5,
+       "value": 0.121443
+      },
+      {
+       "year": 1989.5,
+       "value": -0.129855
+      },
+      {
+       "year": 1990.5,
+       "value": -0.383701
+      },
+      {
+       "year": 1991.5,
+       "value": 0.238427
+      },
+      {
+       "year": 1992.5,
+       "value": 0.095526
+      },
+      {
+       "year": 1993.5,
+       "value": -0.311879
+      },
+      {
+       "year": 1994.5,
+       "value": -0.382812
+      },
+      {
+       "year": 1995.5,
+       "value": -0.251574
+      },
+      {
+       "year": 1996.5,
+       "value": -0.153493
+      },
+      {
+       "year": 1997.5,
+       "value": -0.086926
+      },
+      {
+       "year": 1998.5,
+       "value": 0.080006
+      },
+      {
+       "year": 1999.5,
+       "value": -0.270871
+      },
+      {
+       "year": 2000.5,
+       "value": -0.102907
+      },
+      {
+       "year": 2001.5,
+       "value": -0.012741
+      },
+      {
+       "year": 2002.5,
+       "value": 0.511288
+      },
+      {
+       "year": 2003.5,
+       "value": 0.500685
+      },
+      {
+       "year": 2004.5,
+       "value": -0.038801
+      },
+      {
+       "year": 2005.5,
+       "value": -0.400365
+      },
+      {
+       "year": 2006.5,
+       "value": -0.316619
+      },
+      {
+       "year": 2007.5,
+       "value": -0.079412
+      },
+      {
+       "year": 2008.5,
+       "value": -0.27086
+      },
+      {
+       "year": 2009.5,
+       "value": 0.502672
+      },
+      {
+       "year": 2010.5,
+       "value": 0.345233
+      },
+      {
+       "year": 2011.5,
+       "value": -0.052237
+      },
+      {
+       "year": 2012.5,
+       "value": 0.166197
+      },
+      {
+       "year": 2013.5,
+       "value": -0.267984
+      },
+      {
+       "year": 2014.5,
+       "value": 0.153928
+      },
+      {
+       "year": 2015.5,
+       "value": 0.472312
+      },
+      {
+       "year": 2016.5,
+       "value": 0.137655
+      },
+      {
+       "year": 2017.5,
+       "value": 0.185482
+      },
+      {
+       "year": 2018.5,
+       "value": 0.432458
+      },
+      {
+       "year": 2019.5,
+       "value": 0.32708
+      },
+      {
+       "year": 2020.5,
+       "value": -0.181235
+      },
+      {
+       "year": 2021.5,
+       "value": -0.175071
+      },
+      {
+       "year": 2022.5,
+       "value": -0.290403
+      },
+      {
+       "year": 2023.5,
+       "value": 0.151927
+      },
+      {
+       "year": 2024.5,
+       "value": 0.399858
+      },
+      {
+       "year": 2025.5,
+       "value": -0.43616
       }
-    },
-    {
-      "name": "rainfall",
-      "label": "Rainfall",
-      "source": "nasa_data",
-      "critical": false,
-      "status": "analyzed",
-      "result": {
-        "verdict": {
-          "code": "detected",
-          "label": "Detected",
-          "summary": "Trends found here do not show cause."
-        },
-        "years": {
-          "have": 46,
-          "needed_low": 30,
-          "needed_mid": 50,
-          "needed_high": 80,
-          "needed_for_meaningful": 70,
-          "meaningful_slope": 0.02
-        },
-        "trend": {
-          "slope_per_year": 0.00123456789012,
-          "slope_ci": [
-            0.00031234567,
-            0.0021234567
-          ],
-          "p_value": 0.0123456789,
-          "min_detectable_slope": 0.012812345678,
-          "units": "mm/day"
-        },
-        "noise": {
-          "sigma": 0.3112345678,
-          "lag1_autocorr": 0.1198765432
-        },
-        "provenance": {
-          "dataset": "MERRA-2",
-          "variable": "precip",
-          "region": "Maharashtra",
-          "start": 1980,
-          "end": 2025,
-          "simulated": false
-        },
-        "caveats": [
-          "Values are anomalies, not absolute temperatures."
-        ],
-        "tested_count": 2
+     ],
+     "trend_line": [
+      {
+       "year": 1980.5,
+       "trend": -0.1266,
+       "low": -0.230895,
+       "high": -0.018926
+      },
+      {
+       "year": 2025.5,
+       "trend": 0.075058,
+       "low": -0.032616,
+       "high": 0.179354
       }
+     ],
+     "seasonality_removed": true
     },
-    {
-      "name": "pond_size",
-      "label": "Pond size",
-      "source": "ask_user",
-      "critical": false,
-      "status": "needs_user",
-      "prompt": "About how big is the pond?"
+    "provenance": {
+     "dataset": "MERRA-2 M2TMNXSLV",
+     "variable": "T2M",
+     "region": "Maharashtra",
+     "start": "1980-01",
+     "end": "2025-12",
+     "simulated": false
     },
-    {
-      "name": "nutrient_load",
-      "label": "Nutrient load",
-      "source": "not_knowable",
-      "critical": true,
-      "status": "not_knowable"
-    },
-    {
-      "name": "existing_algae",
-      "label": "Existing algae",
-      "source": "not_knowable",
-      "critical": true,
-      "status": "not_knowable"
+    "caveats": [
+     "Not finding a trend is not proof there isn't one.",
+     "Years-needed assumes the observed trend continues and the noise stays simple; read it as a range.",
+     "A trend is not a forecast.",
+     "'Meaningful' was set to 0.02 K per year; the verdict depends on that choice."
+    ],
+    "tested_count": 1,
+    "meaningful": {
+     "rule": "0.02 per year (absolute)",
+     "basis": "about the recent global warming rate (~0.2 K/decade); placeholder",
+     "value": 0.02,
+     "sensitivity": [
+      {
+       "factor": 0.5,
+       "value": 0.01,
+       "verdict_code": "data_limited",
+       "needed_years": 54.2
+      },
+      {
+       "factor": 1.0,
+       "value": 0.02,
+       "verdict_code": "no_trend",
+       "needed_years": 34.2
+      },
+      {
+       "factor": 2.0,
+       "value": 0.04,
+       "verdict_code": "no_trend",
+       "needed_years": 21.5
+      }
+     ]
     }
-  ],
-  "abstained": true,
-  "abstain_reason": "Nutrient load and existing algae cannot be known from this data, so no number of days can be given.",
-  "risk_window": {
-    "months": [
-      4,
-      5,
-      6
-    ],
-    "month_names": [
-      "April",
-      "May",
-      "June"
-    ],
-    "definition": "Months where the record's air temperature averaged above its own long-run average.",
-    "base_rate": {
-      "years_met": 12,
-      "years_total": 20,
-      "statement": "Across the record, these months met that definition in 12 of 20 years."
-    },
-    "caveat": "This is a window of conditions, not a forecast, because the data has no nutrient information"
+   }
   },
-  "tested_count": 2,
-  "llm_allowed_phrases": [
-    {
-      "id": "co_occurs",
-      "text": "co-occurs with"
+  {
+   "name": "rainfall",
+   "label": "Rainfall",
+   "source": "nasa_data",
+   "critical": false,
+   "status": "analyzed",
+   "result": {
+    "verdict": {
+     "code": "detected",
+     "label": "Trend detected",
+     "summary": "A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0146587 mm/day per year chosen as meaningful for this variable."
     },
-    {
-      "id": "not_proof",
-      "text": "not proof there isn't one"
+    "years": {
+     "have": 45.9,
+     "needed_low": 39.0,
+     "needed_mid": 46.6,
+     "needed_high": 59.7,
+     "needed_for_meaningful": 48.4,
+     "meaningful_slope": 0.014658711748443035
+    },
+    "trend": {
+     "slope_per_year": 0.00632509,
+     "slope_ci": [
+      0.00190982,
+      0.01155708
+     ],
+     "ols_slope_per_year": 0.01550156,
+     "p_value": 0.0166,
+     "p_value_method": "Mann-Kendall (Kendall tau) on annual means",
+     "min_detectable_slope": 0.015868,
+     "units": "mm/day"
+    },
+    "noise": {
+     "sigma": 1.4961,
+     "lag1_autocorr": 0.0
+    },
+    "chart": {
+     "points": [
+      {
+       "year": 1980.5,
+       "value": 0.176091
+      },
+      {
+       "year": 1981.5,
+       "value": 0.749425
+      },
+      {
+       "year": 1982.5,
+       "value": -0.10898
+      },
+      {
+       "year": 1983.5,
+       "value": -0.05884
+      },
+      {
+       "year": 1984.5,
+       "value": -0.690125
+      },
+      {
+       "year": 1985.5,
+       "value": -0.704685
+      },
+      {
+       "year": 1986.5,
+       "value": -0.957478
+      },
+      {
+       "year": 1987.5,
+       "value": -0.407596
+      },
+      {
+       "year": 1988.5,
+       "value": 0.189729
+      },
+      {
+       "year": 1989.5,
+       "value": -0.186562
+      },
+      {
+       "year": 1990.5,
+       "value": 0.191284
+      },
+      {
+       "year": 1991.5,
+       "value": -0.401564
+      },
+      {
+       "year": 1992.5,
+       "value": -0.562511
+      },
+      {
+       "year": 1993.5,
+       "value": 0.055026
+      },
+      {
+       "year": 1994.5,
+       "value": 0.167451
+      },
+      {
+       "year": 1995.5,
+       "value": -0.141639
+      },
+      {
+       "year": 1996.5,
+       "value": -0.074018
+      },
+      {
+       "year": 1997.5,
+       "value": -0.186341
+      },
+      {
+       "year": 1998.5,
+       "value": 0.309012
+      },
+      {
+       "year": 1999.5,
+       "value": -0.638131
+      },
+      {
+       "year": 2000.5,
+       "value": -0.454882
+      },
+      {
+       "year": 2001.5,
+       "value": -0.564351
+      },
+      {
+       "year": 2002.5,
+       "value": -0.677377
+      },
+      {
+       "year": 2003.5,
+       "value": -0.426384
+      },
+      {
+       "year": 2004.5,
+       "value": -0.309384
+      },
+      {
+       "year": 2005.5,
+       "value": 0.800276
+      },
+      {
+       "year": 2006.5,
+       "value": 0.856189
+      },
+      {
+       "year": 2007.5,
+       "value": 0.302341
+      },
+      {
+       "year": 2008.5,
+       "value": 0.018096
+      },
+      {
+       "year": 2009.5,
+       "value": -0.112272
+      },
+      {
+       "year": 2010.5,
+       "value": 0.732721
+      },
+      {
+       "year": 2011.5,
+       "value": -0.279
+      },
+      {
+       "year": 2012.5,
+       "value": -0.483807
+      },
+      {
+       "year": 2013.5,
+       "value": 0.410706
+      },
+      {
+       "year": 2014.5,
+       "value": -0.333724
+      },
+      {
+       "year": 2015.5,
+       "value": -0.645358
+      },
+      {
+       "year": 2016.5,
+       "value": 0.240335
+      },
+      {
+       "year": 2017.5,
+       "value": 0.000869
+      },
+      {
+       "year": 2018.5,
+       "value": -0.558532
+      },
+      {
+       "year": 2019.5,
+       "value": 0.605844
+      },
+      {
+       "year": 2020.5,
+       "value": 0.928003
+      },
+      {
+       "year": 2021.5,
+       "value": 0.703169
+      },
+      {
+       "year": 2022.5,
+       "value": 0.737955
+      },
+      {
+       "year": 2023.5,
+       "value": 0.050532
+      },
+      {
+       "year": 2024.5,
+       "value": 0.845326
+      },
+      {
+       "year": 2025.5,
+       "value": 0.89316
+      }
+     ],
+     "trend_line": [
+      {
+       "year": 1980.5,
+       "trend": -0.198334,
+       "low": -0.316053,
+       "high": -0.09899
+      },
+      {
+       "year": 2025.5,
+       "trend": 0.086295,
+       "low": -0.013048,
+       "high": 0.204015
+      }
+     ],
+     "seasonality_removed": true
+    },
+    "provenance": {
+     "dataset": "MERRA-2 M2TMNXFLX",
+     "variable": "PRECTOTCORR",
+     "region": "Maharashtra",
+     "start": "1980-01",
+     "end": "2025-12",
+     "simulated": false
+    },
+    "caveats": [
+     "Not finding a trend is not proof there isn't one.",
+     "Years-needed assumes the observed trend continues and the noise stays simple; read it as a range.",
+     "A trend is not a forecast.",
+     "'Meaningful' was set to 0.0146587 mm/day per year; the verdict depends on that choice."
+    ],
+    "tested_count": 1,
+    "meaningful": {
+     "rule": "5.0% of the mean per decade",
+     "basis": "5% of the long-term mean per decade; project choice, placeholder",
+     "value": 0.014659,
+     "sensitivity": []
     }
+   }
+  },
+  {
+   "name": "sunlight",
+   "label": "Sunlight",
+   "source": "nasa_data",
+   "critical": false,
+   "status": "data_unavailable",
+   "result": null
+  },
+  {
+   "name": "shade",
+   "label": "Shade over the pond",
+   "source": "ask_user",
+   "critical": false,
+   "status": "needs_user",
+   "result": null,
+   "prompt": "How much of the pond is shaded?"
+  },
+  {
+   "name": "pond_size",
+   "label": "Pond size",
+   "source": "ask_user",
+   "critical": false,
+   "status": "needs_user",
+   "result": null,
+   "prompt": "Roughly how big is the pond?"
+  },
+  {
+   "name": "nutrient_load",
+   "label": "Nutrient load",
+   "source": "not_knowable",
+   "critical": true,
+   "status": "not_knowable",
+   "result": null
+  },
+  {
+   "name": "existing_algae",
+   "label": "Algae already present",
+   "source": "not_knowable",
+   "critical": true,
+   "status": "not_knowable",
+   "result": null
+  }
+ ],
+ "abstained": true,
+ "abstain_reason": "Cannot give a number. These critical factors are unknown here: Nutrient load, Algae already present.",
+ "risk_window": {
+  "months": [
+   4,
+   5,
+   6
   ],
-  "caveats": [
-    "Trends found here do not show cause.",
-    "Values are anomalies, not absolute temperatures."
-  ]
+  "month_names": [
+   "April",
+   "May",
+   "June"
+  ],
+  "definition": "STUB: the 3 calendar months with the highest average air temperature. Replace with a sourced rule.",
+  "base_rate": {
+   "years_met": 12,
+   "years_total": 20,
+   "statement": "years in which these months averaged above the record's own average"
+  },
+  "caveat": "A window of months where conditions co-occur, not a prediction and not a number of days."
+ },
+ "tested_count": 2,
+ "llm_allowed_phrases": [
+  {
+   "id": "axis:air_temp",
+   "text": "Air temperature: No trend was found even with a long record. That is not proof that nothing is happening. A trend larger than about 0.013 K per year would probably have been detected."
+  },
+  {
+   "id": "axis:rainfall",
+   "text": "Rainfall: A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0146587 mm/day per year chosen as meaningful for this variable."
+  },
+  {
+   "id": "axis:sunlight",
+   "text": "Sunlight: no data is available for this factor yet."
+  },
+  {
+   "id": "abstain",
+   "text": "Cannot give a number. These critical factors are unknown here: Nutrient load, Algae already present."
+  },
+  {
+   "id": "risk_window",
+   "text": "Risk window: April, May, June. In 12 of the last 20 years these months averaged above the record's own average. A window of months where conditions co-occur, not a prediction and not a number of days."
+  },
+  {
+   "id": "tested",
+   "text": "2 data series were tested; results co-occur with each other and do not show cause."
+  }
+ ],
+ "caveats": [
+  "Not finding a trend is not proof there isn't one.",
+  "A trend is not a forecast.",
+  "2 series were tested; some significant results can arise by chance."
+ ]
 }

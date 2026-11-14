@@ -104,8 +104,8 @@ class RiskWindowTextTests(unittest.TestCase):
 class GuardOnEngineTextTests(unittest.TestCase):
     def test_engine_words_do_not_trip_guard(self):
         r = load_pond()
-        text = ("This tool cannot give a definite answer here. No trend found (not proof of absence). "
-                "Trends found here do not show cause.")
+        text = ("This tool cannot give a definite answer here. Not finding a trend is not proof there isn't one. "
+                "2 data series were tested; results co-occur with each other and do not show cause.")
         self.assertTrue(check_text(text, r).ok, check_text(text, r).reasons)
 
     def test_llms_own_causal_word_still_rejected(self):
@@ -134,10 +134,10 @@ class GuardOnEngineTextTests(unittest.TestCase):
 
 
 class LongDecimalTests(unittest.TestCase):
-    LONG = 0.004480123456789
+    LONG = 0.00448129
 
     def test_formatter_output_is_accepted(self):
-        r = axis_result("air_temperature")
+        r = axis_result("air_temp")
         self.assertEqual(r["trend"]["slope_per_year"], self.LONG)
         shown = _fmt(self.LONG)
         self.assertNotEqual(float(shown), self.LONG)         # the rounding really changes the value
@@ -146,14 +146,14 @@ class LongDecimalTests(unittest.TestCase):
         self.assertIn(float(shown), allowed_numbers(r))
 
     def test_close_but_different_number_still_rejected(self):
-        r = axis_result("air_temperature")
+        r = axis_result("air_temp")
         g = check_text("No trend was found; slope 0.0045 K per year.", r)
         self.assertFalse(g.ok)
         self.assertTrue(any("invented number" in x for x in g.reasons), g.reasons)
 
     def test_single_axis_verdict_paths_llm_off(self):
         # detected / no_trend / data_limited, each with long decimals, at all levels
-        base = axis_result("air_temperature")
+        base = axis_result("air_temp")
         cases = {}
         d = copy.deepcopy(base)
         d["verdict"].update(code="detected", label="Trend detected")
