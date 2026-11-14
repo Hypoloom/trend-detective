@@ -27,16 +27,19 @@ def _fit(s: pd.Series, deseason=True):
     t = (a.index.year + (a.index.month - 0.5) / 12).to_numpy(float)
     y = a.to_numpy(float)
     ols = stats.linregress(t, y)
-    ts_slope, _, ts_lo, ts_hi = stats.theilslopes(y, t, 0.95)
     annual = a.groupby(a.index.year).mean()
-    mk = stats.kendalltau(annual.index.to_numpy(float), annual.to_numpy(float))
+    av, ay = annual.to_numpy(float), annual.index.to_numpy(float)
+    ts_slope, _, ts_lo, ts_hi = stats.theilslopes(av, ay, 0.95)   # on annual means, like the test
+    mk = stats.kendalltau(ay, av)
+    keep = np.argsort(np.abs(av - np.median(av)))[:-3]
+    p_drop3 = float(stats.kendalltau(ay[keep], av[keep]).pvalue) if len(av) >= 10 else None
     resid = y - (ols.intercept + ols.slope * t)
     phi = min(max(_lag1(resid), 0.0), 0.9)
     sigma = float(resid.std(ddof=2))
     return dict(
         years=float(t[-1] - t[0]), ols=float(ols.slope), ts=float(ts_slope),
         ts_ci=(float(ts_lo), float(ts_hi)), p_mk=float(mk.pvalue),
-        sigma=sigma, phi=phi, se=float(ols.stderr),
+        sigma=sigma, phi=phi, se=float(ols.stderr), p_drop3=p_drop3
     )
 
 
@@ -81,7 +84,7 @@ def analyze(s: pd.Series, regions: dict | None = None, alpha=0.05, deseason=True
                                          if n_need is not None and np.isfinite(n_need) else None),
                 years_needed=(round(n_low, 1), round(n_mid, 1),
                               round(n_high, 1) if np.isfinite(n_high) else None),
-                **{k: f[k] for k in ("ols", "ts", "ts_ci", "p_mk", "sigma", "phi")})
+                **{k: f[k] for k in ("ols", "ts", "ts_ci", "p_mk", "sigma", "phi", "p_drop3")})
 
 
 if __name__ == "__main__":

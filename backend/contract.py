@@ -21,7 +21,7 @@ def _f(x, nd=6):
     return round(float(x), nd)
 
 
-def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=None):
+def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=None, fragile=False):
     direction = "upward" if slope > 0 else "downward"
     if code == "detected":
         text = (f"A statistically significant {direction} trend of {slope:.3g} {units} "
@@ -29,7 +29,11 @@ def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=Non
         if meaningful and abs(slope) < meaningful:
             text += (f" That is smaller than the {meaningful:.3g} {units} per year "
                      "chosen as meaningful for this variable.")
+        if fragile:
+            text += (" This result depends on a few extreme years: it is not significant "
+                     "when the most extreme years are left out.")
         return text
+    
     if code == "data_limited":
         if nm is not None:
             lead = "To judge whether a meaningful trend exists, the record would need to be"
@@ -70,6 +74,8 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
     lo, mid, hi = _f(lo, 1), _f(mid, 1), _f(hi, 1)
     nm = _f(r["years_needed_meaningful"], 1)
     md = _f(r["min_detectable"], 6)
+    p_drop = r["p_drop3"]
+    fragile = bool(code == "detected" and p_drop is not None and p_drop >= 0.05)
 
     a = deseasonalize(s) if deseason else s
     annual = a.groupby(a.index.year).mean()
@@ -111,14 +117,14 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
     return {
         "verdict": {"code": code, "label": label,
                     "summary": _summary(code, r["ts"], units, r["years_have"], lo, hi,
-                                        nm=nm, meaningful=meaningful, md=md)},
+                                        nm=nm, meaningful=meaningful, md=md, fragile=fragile)},
         "years": {"have": r["years_have"], "needed_low": lo, "needed_mid": mid,
                   "needed_high": hi, "needed_for_meaningful": nm,
                   "meaningful_slope": meaningful},
         "trend": {"slope_per_year": _f(r["ts"], 8), "slope_ci": [_f(ts_lo, 8), _f(ts_hi, 8)],
                   "ols_slope_per_year": _f(r["ols"], 8), "p_value": _f(r["p_mk"], 4),
                   "p_value_method": "Mann-Kendall (Kendall tau) on annual means",
-                  "min_detectable_slope": md, "units": units},
+                  "min_detectable_slope": md, "units": units,"p_value_without_extreme_years": _f(p_drop, 4), "fragile": fragile,},
         "noise": {"sigma": _f(r["sigma"], 4), "lag1_autocorr": _f(r["phi"], 3)},
         "chart": {"points": pts, "trend_line": trend, "seasonality_removed": deseason},
         "provenance": {"dataset": dataset, "variable": variable, "region": region,
