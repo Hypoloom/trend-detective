@@ -35,6 +35,12 @@ DATASETS = {
             "file": "stream_cache/t2m_72_16_80_21.csv", "slope": None},
     "PRECIP": {"label": "Rainfall", "units": "mm/day", "stream_key": "precip",
                "file": "stream_cache/precip_72_16_80_21.csv", "slope": None},
+    "SUNLIGHT": {"label": "Sunlight reaching the surface", "units": "W m-2", "stream_key": "sunlight",
+                 "file": "stream_cache/sunlight_72_16_80_21.csv", "slope": None},
+    "T2M_MIN": {"label": "Night-time air temperature (daily minimum)", "units": "K", "stream_key": "t2m_min",
+                "file": "stream_cache/t2m_min_72_16_80_21.csv", "slope": None},
+    "T2M_MAX": {"label": "Day-time air temperature (daily maximum)", "units": "K", "stream_key": "t2m_max",
+                "file": "stream_cache/t2m_max_72_16_80_21.csv", "slope": None},
 }
 
 REGIONS = {

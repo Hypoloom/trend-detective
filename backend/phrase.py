@@ -331,6 +331,12 @@ def _risk_window_text(rw, domain=None, level="plain"):
         s = _base_rate_sentence(br)
         if s:
             parts.append(s)
+    rv = rw.get("recent_vs_earlier")
+    if isinstance(rv, dict) and rv.get("difference") is not None:
+        parts.append(_sentence(
+            f"In the last {_fmt(rv['recent_years'])} years of the record these months averaged "
+            f"{_fmt_sig(rv['difference'])} {rv.get('units', '')} {rv['direction']} than in the "
+            f"{_fmt(rv['earlier_years'])} years before"))
     if rw.get("caveat"):
         parts.append(_sentence(rw["caveat"]))
     return " ".join(parts)
