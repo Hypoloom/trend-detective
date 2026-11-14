@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass
 
 LEVELS = ("plain", "detailed", "pro")
+_APOS = "\u2019"   # typographic apostrophe, normalised to "'" before checking
 
 
 # ---------------- adapter layer (no provider chosen yet) ----------------
@@ -114,9 +115,9 @@ def engine_strings(result):
 
 def own_wording(text, result):
     """The text with everything copied verbatim from the engine removed: only the writer's own words stay."""
-    t = text.replace("’", "'")
+    t = text.replace(_APOS, "'")
     for s in engine_strings(result):
-        t = re.sub(re.escape(s.replace("’", "'")), " ", t, flags=re.I)
+        t = re.sub(re.escape(s.replace(_APOS, "'")), " ", t, flags=re.I)
     return t
 
 
@@ -141,6 +142,7 @@ def needs_evidence_notice(result):
 class GuardResult:
     ok: bool
     reasons: list
+
 
 # ---------------- extra guard checks: number words, direction words, association wording ----------------
 _ONES = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
@@ -182,6 +184,7 @@ def _trend_reported(result):
     code = _verdict_code(result)
     return bool(code) and code not in _NON_TREND_CODES
 
+
 def _any_trend_reported(result):
     """True if the top-level verdict or any analyzed axis reports a detected trend."""
     if _verdict_code(result) == "detected":
@@ -192,6 +195,8 @@ def _any_trend_reported(result):
                 and (r.get("verdict") or {}).get("code") == "detected":
             return True
     return False
+
+
 def _num_or_none(x):
     """A finite number, or None. Booleans and strings are not numbers."""
     if isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x):
@@ -337,11 +342,12 @@ def extra_problems(own, low, result, allowed):
         problems.append("fragile trend named without saying it depends on a few extreme years")
     return problems
 
+
 def check_text(text, result):
     reasons = []
     if not text or not text.strip():
         return GuardResult(False, ["empty text"])
-    low = text.lower().replace("’", "'")
+    low = text.lower().replace(_APOS, "'")
     allowed = allowed_numbers(result)
     for n in numbers_in_text(text):
         if not any(math.isclose(n, a, rel_tol=1e-9, abs_tol=1e-12) for a in allowed):
@@ -503,6 +509,7 @@ def _meaningful_note(r):
             return _sentence(s)
     return ""
 
+
 _FRAGILE_FALLBACK = ("This result depends on a few extreme years: it is not significant "
                      "when the most extreme years are left out.")
 
@@ -519,6 +526,24 @@ def _fragile_note(r):
         if "extreme years" in s.lower():
             return _sentence(s)
     return _FRAGILE_FALLBACK
+
+
+def _no_trend_note(r, level):
+    """Engine sentences explaining a no_trend result, copied from verdict.summary (no new wording).
+    Plain gets the 95% range sentence too; detailed and pro already print the range themselves."""
+    v = r.get("verdict") or {}
+    if v.get("code") != "no_trend":
+        return ""
+    keys = ["chosen as meaningful", "too short to tell"]
+    if level == "plain":
+        keys.insert(0, "95% range")
+    out = []
+    for s in re.split(r"(?<=[.!?])\s+", str(v.get("summary") or "")):
+        if any(k in s.lower() for k in keys):
+            out.append(_sentence(s))
+    return " ".join(out)
+
+
 def _axis_lines(result, level):
     """One short report per analyzed axis: label, verdict label, slope + units (more at detailed / pro)."""
     out = []
@@ -548,6 +573,9 @@ def _axis_lines(result, level):
         note = _meaningful_note(r)
         if note:
             line += " " + note
+        nt = _no_trend_note(r, level)
+        if nt:
+            line += " " + nt
         fragile = _fragile_note(r)
         if fragile:
             line += " " + fragile

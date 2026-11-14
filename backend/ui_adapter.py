@@ -70,9 +70,9 @@ def to_ui(c, dataset_id, region_id):
     gap = None
     if code != "detected":
         md = tr.get("min_detectable_slope")
-        if code == "no_trend" and md is not None:
-            tip = (f"This record could only reliably detect trends larger than about "
-                   f"{_f(md)} {units} per year.")
+        if code == "no_trend":
+            tip = ("The size chosen as meaningful is a project choice, not a standard. "
+                   "Changing it can change this verdict.")
         elif code == "data_limited" and yrs.get("needed_for_meaningful") is not None:
             tip = (f"About {_f(yrs['needed_for_meaningful'])} years of data are needed to see a change "
                    f"of {_f(yrs.get('meaningful_slope'))} {units} per year.")

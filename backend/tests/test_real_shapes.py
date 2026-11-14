@@ -231,12 +231,16 @@ class MeaningfulSentenceTests(unittest.TestCase):
         self.assertNotIn("0.0147", phrase(load_pond(), "plain"))
 
     def test_not_added_when_no_trend(self):
-        # a no_trend axis never gets the sentence, even if its summary happened to contain it
+        # the detected-style note is never added to a no_trend axis, even if its summary contains the sentence
+        import phrase as _p
         pond = load_pond()
         pond["axes"][0]["result"]["verdict"]["summary"] = self.SENTENCE
-        text = phrase(pond, "plain")
-        self.assertEqual(text.count(self.SENTENCE), 1)                 # only the sunlight one
-        self.assertGreater(text.index(self.SENTENCE), text.index("Sunlight:"))
+        self.assertEqual(_p._meaningful_note(pond["axes"][0]["result"]), "")
+
+    def test_no_trend_axis_explains_why(self):
+        text = phrase(load_pond(), "plain")
+        for piece in ("95% range", "chosen as meaningful, so a change of that size", "too short to tell"):
+            self.assertIn(piece, text)
 
     def test_not_added_when_slope_is_meaningful(self):
         pond = load_pond()
@@ -250,7 +254,7 @@ class MeaningfulSentenceTests(unittest.TestCase):
         pond = load_pond()
         pond["axes"][2]["result"]["verdict"]["summary"] = "A trend was detected in sunlight."
         text = phrase(pond, "plain")
-        self.assertNotIn("smaller than", text)           # nothing is invented
+        self.assertNotIn("0.471", text)                  # no sunlight meaningful-size sentence is invented
 
 
 class SignificantFigureTests(unittest.TestCase):

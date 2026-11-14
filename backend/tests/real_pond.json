@@ -12,7 +12,7 @@
     "verdict": {
      "code": "no_trend",
      "label": "No trend found",
-     "summary": "No trend was found even with a long record. That is not proof that nothing is happening. A trend larger than about 0.013 K per year would probably have been detected."
+     "summary": "No trend was found over 45.9 years of data. That is not proof that nothing is happening. The estimated change is 0.0036 K per year (95% range -0.00344 to 0.0114). That whole range is smaller than the 0.02 K per year chosen as meaningful, so a change of that size is unlikely in this record. A trend larger than about 0.013 K per year would probably have been detected. If 'meaningful' were set to half that size (0.01 K per year), this record would be too short to tell."
     },
     "years": {
      "have": 45.9,
@@ -875,7 +875,7 @@
  "llm_allowed_phrases": [
   {
    "id": "axis:air_temp",
-   "text": "Air temperature: No trend was found even with a long record. That is not proof that nothing is happening. A trend larger than about 0.013 K per year would probably have been detected."
+   "text": "Air temperature: No trend was found over 45.9 years of data. That is not proof that nothing is happening. The estimated change is 0.0036 K per year (95% range -0.00344 to 0.0114). That whole range is smaller than the 0.02 K per year chosen as meaningful, so a change of that size is unlikely in this record. A trend larger than about 0.013 K per year would probably have been detected. If 'meaningful' were set to half that size (0.01 K per year), this record would be too short to tell."
   },
   {
    "id": "axis:rainfall",
