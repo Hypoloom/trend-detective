@@ -153,10 +153,11 @@ def route(question, domains=None, threshold=THRESHOLD, margin=MARGIN, llm_choose
         return RouteResult(best_id, round(conf, 3), "rules", scores, "keyword match")
     if best == 0:
         why = "no keyword matched"
-    elif conf < threshold:
-        why = "match too weak"
-    else:
+    elif runner > 0 and (best - runner) < margin:
+        # two or more domains matched about equally: a tie, whatever the confidence is
         why = "ambiguous between domains"
+    else:
+        why = "match too weak"
     if llm_choose is not None:
         picked = _ask_llm(question, domains, llm_choose)
         if picked:

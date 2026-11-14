@@ -55,6 +55,11 @@ ABSTAIN_MARKERS = (
     "not enough data", "unable to")
 NO_TREND_MARKERS = ("not found", "no trend found", "no trend was found", "did not find", "not detected")
 
+# Keys whose string values are the ENGINE's own wording. The guard does not scan text that is copied
+# verbatim from these fields for banned words (the engine may say "not proof there isn't one").
+ENGINE_TEXT_KEYS = {"caveat", "caveats", "summary", "label", "definition", "statement", "text",
+                    "abstain_reason", "llm_allowed_phrases"}
+
 
 def numbers_in_text(text):
     text = re.sub(r"(?m)^\s*\d+[.)]\s+", "", text)  # ignore "1. " list numbering
@@ -62,14 +67,19 @@ def numbers_in_text(text):
 
 
 def allowed_numbers(obj):
+    """Every number in the result, plus the rounded form the template prints (see _fmt)."""
     out = []
 
     def walk(x):
         if x is None or isinstance(x, bool):
             return
         if isinstance(x, (int, float)):
-            if not (isinstance(x, float) and math.isnan(x)):
-                out.append(abs(float(x)))
+            if isinstance(x, float) and not math.isfinite(x):
+                return
+            v = abs(float(x))
+            out.append(v)
+            if isinstance(x, float):
+                out.append(abs(float(_fmt(v))))   # rounded form, same rounding as the formatter
         elif isinstance(x, str):
             out.extend(numbers_in_text(x))
         elif isinstance(x, dict):
@@ -81,6 +91,32 @@ def allowed_numbers(obj):
 
     walk(obj)
     return out
+
+
+def engine_strings(result):
+    """Strings the engine wrote itself (caveats, labels, summaries, reasons...), longest first."""
+    found = set()
+
+    def walk(x, key=None):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                walk(v, k)
+        elif isinstance(x, (list, tuple)):
+            for v in x:
+                walk(v, key)      # list items inherit the key of their list
+        elif isinstance(x, str) and key in ENGINE_TEXT_KEYS and len(x.strip()) >= 3:
+            found.add(x.strip())
+
+    walk(result)
+    return sorted(found, key=len, reverse=True)
+
+
+def own_wording(text, result):
+    """The text with everything copied verbatim from the engine removed: only the writer's own words stay."""
+    t = text.replace("’", "'")
+    for s in engine_strings(result):
+        t = re.sub(re.escape(s.replace("’", "'")), " ", t, flags=re.I)
+    return t
 
 
 def must_abstain(result):
@@ -110,21 +146,22 @@ def check_text(text, result):
     reasons = []
     if not text or not text.strip():
         return GuardResult(False, ["empty text"])
-    low = text.lower().replace("\u2019", "'")
+    low = text.lower().replace("’", "'")
     allowed = allowed_numbers(result)
     for n in numbers_in_text(text):
         if not any(math.isclose(n, a, rel_tol=1e-9, abs_tol=1e-12) for a in allowed):
             reasons.append(f"invented number: {n:g}")
-    m = CAUSAL.search(text)
+    own = own_wording(text, result)       # banned-word checks look at the writer's own words only
+    m = CAUSAL.search(own)
     if m:
         reasons.append(f"causal wording: {m.group(0)!r}")
-    m = OVERCLAIM.search(text)
+    m = OVERCLAIM.search(own)
     if m:
         reasons.append(f"overclaim wording: {m.group(0)!r}")
     if must_abstain(result) or needs_evidence_notice(result):
         if not any(k in low for k in ABSTAIN_MARKERS):
             reasons.append("abstention / limited evidence is missing")
-        if SOFTEN.search(text):
+        if SOFTEN.search(own):
             reasons.append("abstention softened")
     if _verdict_code(result) == "no_trend" and not any(k in low for k in NO_TREND_MARKERS):
         reasons.append("'not found' wording missing for no_trend")
@@ -138,18 +175,60 @@ def _fmt(v):
     if isinstance(v, int):
         return str(v)
     if isinstance(v, float):
+        if not math.isfinite(v):
+            return str(v)
         if v == int(v) and abs(v) < 1e15:
             return str(int(v))
         return f"{v:.10f}".rstrip("0").rstrip(".")
     return str(v)
 
 
-def _risk_window_text(rw):
-    if isinstance(rw, dict):
-        return "; ".join(f"{k}: {_fmt(v)}" for k, v in rw.items())
+def _sentence(s):
+    """Make sure a piece of text ends with a full stop (or ! or ?)."""
+    s = str(s).strip()
+    return s if (not s or s.endswith((".", "!", "?"))) else s + "."
+
+
+def _join_names(names):
+    names = [str(n) for n in names]
+    if len(names) <= 1:
+        return "".join(names)
+    return ", ".join(names[:-1]) + " and " + names[-1]
+
+
+_WINDOW_TOPIC = {"pond": "conditions that favor algae"}
+
+
+def _risk_window_text(rw, domain=None, level="plain"):
+    """Turn the engine's risk_window into plain sentences. Never prints dict keys or Python lists."""
     if isinstance(rw, (list, tuple)):
-        return ", ".join(_fmt(v) for v in rw)
-    return str(rw)
+        return _sentence(", ".join(_fmt(v) for v in rw))
+    if not isinstance(rw, dict):
+        return _sentence(rw) if rw else ""
+    parts = []
+    names = rw.get("month_names") or rw.get("months") or []
+    if names:
+        topic = _WINDOW_TOPIC.get(domain)
+        lead = f"The months in the risk window with {topic} are " if topic else "The months in the risk window are "
+        parts.append(f"{lead}{_join_names(_fmt(n) for n in names)}.")
+    if level != "plain" and rw.get("definition"):
+        parts.append("Window definition: " + _sentence(rw["definition"]))
+    br = rw.get("base_rate")
+    if isinstance(br, dict):
+        met, total, stmt = br.get("years_met"), br.get("years_total"), br.get("statement")
+        has_both = bool(stmt) and _fmt(met) in numbers_str(stmt) and _fmt(total) in numbers_str(stmt)
+        if met is not None and total is not None and not has_both:
+            parts.append(f"In {_fmt(met)} of the {_fmt(total)} years in the record, these months fit the window definition.")
+        if stmt:
+            parts.append(_sentence(stmt))
+    if rw.get("caveat"):
+        parts.append(_sentence(rw["caveat"]))
+    return " ".join(parts)
+
+
+def numbers_str(text):
+    """Numbers found in a text, as the strings _fmt would print."""
+    return {_fmt(n) for n in numbers_in_text(str(text))}
 
 
 def _check_level(level):
@@ -157,9 +236,44 @@ def _check_level(level):
         raise ValueError(f"level must be one of {LEVELS}, got {level!r}")
 
 
+def _cap(s):
+    s = str(s)
+    return s[:1].upper() + s[1:]
+
+
+def _axis_lines(result, level):
+    """One short report per analyzed axis: label, verdict label, slope + units (more at detailed / pro)."""
+    out = []
+    for a in result.get("axes") or []:
+        r = a.get("result")
+        if a.get("status") != "analyzed" or not isinstance(r, dict):
+            continue                      # others are already in the "Checks:" line
+        v = r.get("verdict") or {}
+        t = r.get("trend") or {}
+        units = t.get("units") or ""
+        label = _cap(a.get("label") or str(a.get("name", "?")).replace("_", " "))
+        s = f"{label}: {v.get('label') or v.get('code') or 'no verdict'}"
+        if t.get("slope_per_year") is not None:
+            s += f"; slope {_fmt(t['slope_per_year'])} {units} per year".replace("  ", " ")
+        line = _sentence(s)
+        ci = t.get("slope_ci")
+        if level != "plain" and isinstance(ci, (list, tuple)) and len(ci) == 2:
+            line += f" The range for the yearly change runs from {_fmt(ci[0])} to {_fmt(ci[1])} {units}.".replace("  ", " ")
+        if level == "pro" and t.get("p_value") is not None:
+            line += f" p-value {_fmt(t['p_value'])}."
+        out.append(line)
+    return out
+
+
+def _caveat_text(c):
+    if isinstance(c, dict):
+        return str(c.get("text") or c.get("caveat") or "")
+    return str(c)
+
+
 def template_phrase(result, level="plain"):
     _check_level(level)
-    code = _verdict_code(result) or "inconclusive"
+    code = _verdict_code(result)
     t = result.get("trend") or {}
     y = result.get("years") or {}
     nz = result.get("noise") or {}
@@ -170,7 +284,7 @@ def template_phrase(result, level="plain"):
         where = f"the {pv['variable']} data for {pv.get('region', 'this region')}"
     abstain = must_abstain(result)
 
-    # headline about the trend
+    # headline about the trend - only when the engine gave a top-level verdict
     head = []
     if code == "detected":
         if t.get("slope_per_year") is not None:
@@ -189,25 +303,37 @@ def template_phrase(result, level="plain"):
         head.append(s)
     elif code == "masked":
         head.append(f"A trend in {where} may be hidden by noise, so this tool cannot say either way.")
-    else:
+    elif code:
         head.append(f"The result for {where} is inconclusive: there is not enough evidence to say.")
+    # no top-level verdict: say nothing invented; the per-axis lines below carry the facts
 
-    # abstention block
+    # abstention block + risk window
     ab = []
     if abstain:
         ab.append("This tool cannot give a definite answer here.")
         if result.get("abstain_reason"):
-            ab.append(str(result["abstain_reason"]))
-        if result.get("risk_window"):
-            rw = _risk_window_text(result["risk_window"]).strip()
-            ab.append("What the data can show instead is a risk window: "
-                      + rw + ("" if rw.endswith((".", "!", "?")) else "."))
+            ab.append(_sentence(result["abstain_reason"]))
+    if result.get("risk_window"):
+        rw = _risk_window_text(result["risk_window"], result.get("domain"), level).strip()
+        if rw:
+            if abstain:
+                sep = ". " if isinstance(result["risk_window"], dict) else ": "
+                ab.append("What the data can show instead is a risk window" + sep + rw)
+            else:
+                ab.append("Risk window. " + rw)
+    if abstain:
         names = [str(a.get("name", "?")).replace("_", " ") for a in result.get("axes") or []
                  if a.get("status") == "not_knowable" or a.get("source") == "not_knowable"]
         if names:
             ab.append("Not knowable from this data: " + ", ".join(names) + ".")
 
-    lines = ab[:] if (abstain and level == "plain") else ab + head
+    axis_lines = _axis_lines(result, level)
+    if abstain and level == "plain":
+        lines = ab + axis_lines
+    else:
+        lines = ab + head + axis_lines
+    if not lines:
+        lines = ["This result has no overall verdict."]
     if level == "plain":
         return " ".join(lines)
 
@@ -218,7 +344,7 @@ def template_phrase(result, level="plain"):
         lines.append(f"The smallest yearly change this record could reliably pick up is "
                      f"{_fmt(t['min_detectable_slope'])} {units}.")
     for c in result.get("caveats") or []:
-        lines.append(str(c))
+        lines.append(_caveat_text(c))
     if result.get("axes"):
         lines.append("Any trend reported here co-occurs with the question you asked about; "
                      "it is not an explanation.")
@@ -228,8 +354,9 @@ def template_phrase(result, level="plain"):
 
     if level == "pro":
         if t.get("slope_per_year") is not None:
-            lines.append(f"Slope {_fmt(t['slope_per_year'])} {units}/yr, p-value {_fmt(t.get('p_value'))}.")
-        if nz:
+            p = f", p-value {_fmt(t['p_value'])}" if t.get("p_value") is not None else ""
+            lines.append(f"Slope {_fmt(t['slope_per_year'])} {units}/yr{p}.")
+        if nz.get("sigma") is not None or nz.get("lag1_autocorr") is not None:
             lines.append(f"Noise: sigma {_fmt(nz.get('sigma'))}, first-lag autocorrelation "
                          f"{_fmt(nz.get('lag1_autocorr'))}.")
         if result.get("tested_count") is not None:

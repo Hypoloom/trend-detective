@@ -1,0 +1,161 @@
+{
+  "_fixture_note": "SYNTHETIC stand-in built from the documented answer.build() shape. Replace with real output: python answer.py pond > tests/real_pond.json",
+  "domain": "pond",
+  "region": "Maharashtra",
+  "axes": [
+    {
+      "name": "air_temperature",
+      "label": "Air temperature",
+      "source": "nasa_data",
+      "critical": false,
+      "status": "analyzed",
+      "result": {
+        "verdict": {
+          "code": "no_trend",
+          "label": "No trend found (not proof of absence)",
+          "summary": "Trends found here do not show cause."
+        },
+        "years": {
+          "have": 46,
+          "needed_low": 30,
+          "needed_mid": 50,
+          "needed_high": 80,
+          "needed_for_meaningful": 70,
+          "meaningful_slope": 0.02
+        },
+        "trend": {
+          "slope_per_year": 0.004480123456789,
+          "slope_ci": [
+            -0.000312345678,
+            0.009112345678
+          ],
+          "p_value": 0.2371234567,
+          "min_detectable_slope": 0.012812345678,
+          "units": "K"
+        },
+        "noise": {
+          "sigma": 0.3112345678,
+          "lag1_autocorr": 0.1198765432
+        },
+        "provenance": {
+          "dataset": "MERRA-2",
+          "variable": "t2m",
+          "region": "Maharashtra",
+          "start": 1980,
+          "end": 2025,
+          "simulated": false
+        },
+        "caveats": [
+          "Values are anomalies, not absolute temperatures."
+        ],
+        "tested_count": 2
+      }
+    },
+    {
+      "name": "rainfall",
+      "label": "Rainfall",
+      "source": "nasa_data",
+      "critical": false,
+      "status": "analyzed",
+      "result": {
+        "verdict": {
+          "code": "detected",
+          "label": "Detected",
+          "summary": "Trends found here do not show cause."
+        },
+        "years": {
+          "have": 46,
+          "needed_low": 30,
+          "needed_mid": 50,
+          "needed_high": 80,
+          "needed_for_meaningful": 70,
+          "meaningful_slope": 0.02
+        },
+        "trend": {
+          "slope_per_year": 0.00123456789012,
+          "slope_ci": [
+            0.00031234567,
+            0.0021234567
+          ],
+          "p_value": 0.0123456789,
+          "min_detectable_slope": 0.012812345678,
+          "units": "mm/day"
+        },
+        "noise": {
+          "sigma": 0.3112345678,
+          "lag1_autocorr": 0.1198765432
+        },
+        "provenance": {
+          "dataset": "MERRA-2",
+          "variable": "precip",
+          "region": "Maharashtra",
+          "start": 1980,
+          "end": 2025,
+          "simulated": false
+        },
+        "caveats": [
+          "Values are anomalies, not absolute temperatures."
+        ],
+        "tested_count": 2
+      }
+    },
+    {
+      "name": "pond_size",
+      "label": "Pond size",
+      "source": "ask_user",
+      "critical": false,
+      "status": "needs_user",
+      "prompt": "About how big is the pond?"
+    },
+    {
+      "name": "nutrient_load",
+      "label": "Nutrient load",
+      "source": "not_knowable",
+      "critical": true,
+      "status": "not_knowable"
+    },
+    {
+      "name": "existing_algae",
+      "label": "Existing algae",
+      "source": "not_knowable",
+      "critical": true,
+      "status": "not_knowable"
+    }
+  ],
+  "abstained": true,
+  "abstain_reason": "Nutrient load and existing algae cannot be known from this data, so no number of days can be given.",
+  "risk_window": {
+    "months": [
+      4,
+      5,
+      6
+    ],
+    "month_names": [
+      "April",
+      "May",
+      "June"
+    ],
+    "definition": "Months where the record's air temperature averaged above its own long-run average.",
+    "base_rate": {
+      "years_met": 12,
+      "years_total": 20,
+      "statement": "Across the record, these months met that definition in 12 of 20 years."
+    },
+    "caveat": "This is a window of conditions, not a forecast, because the data has no nutrient information"
+  },
+  "tested_count": 2,
+  "llm_allowed_phrases": [
+    {
+      "id": "co_occurs",
+      "text": "co-occurs with"
+    },
+    {
+      "id": "not_proof",
+      "text": "not proof there isn't one"
+    }
+  ],
+  "caveats": [
+    "Trends found here do not show cause.",
+    "Values are anomalies, not absolute temperatures."
+  ]
+}

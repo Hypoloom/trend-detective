@@ -31,7 +31,7 @@ class RouterTests(unittest.TestCase):
     def test_tie_goes_to_fallback(self):
         r = route("pond orange", domains=STUB_DOMAINS)
         self.assertTrue(r.is_fallback)
-        self.assertIn("weak", r.reason)
+        self.assertIn("ambiguous", r.reason)      # was "weak" before the label fix
 
     def test_llm_cannot_invent_domain(self):
         for bad in ({"domain": "lake"}, {"domain": "none"}, "pond", None, {}):
