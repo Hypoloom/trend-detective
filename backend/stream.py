@@ -89,7 +89,11 @@ def get_series(name, box, start, end, workers=32, cache_dir=CACHE_DIR, verbose=T
     if os.path.exists(path):
         d = pd.read_csv(path, parse_dates=["time"])
         have = pd.Series(d["value"].values, index=pd.DatetimeIndex(d["time"]))
-    todo = [(m, u) for m, u in _list_months(cfg["short_name"], start, end) if m not in have.index]
+        want = pd.date_range(f"{start}-01-01", f"{end}-12-01", freq="MS")
+    if len(have) and want.isin(have.index).all():
+        todo = []   # cache already covers the whole range: skip the CMR search
+    else:
+        todo = [(m, u) for m, u in _list_months(cfg["short_name"], start, end) if m not in have.index]
     t0 = time.time()
     if todo:
         def work(mu):
