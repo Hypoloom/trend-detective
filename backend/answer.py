@@ -10,7 +10,7 @@ import calendar
 BLOCKING = {"needs_user", "not_knowable", "data_unavailable"}
 
 
-def load_domain(domain_id, path="domains_stub.json"):
+def load_domain(domain_id, path="domains.json"):
     with open(path, encoding="utf-8") as f:
         for d in json.load(f)["domains"]:
             if d["id"] == domain_id:
@@ -38,7 +38,7 @@ def _risk_window(series_by_axis, rule, last_n=20):
 
 
 def build(domain_id, region_label, box, start, end, user_inputs=None,
-          domains_path="domains_stub.json", workers=32):
+          domains_path="domains.json", workers=32):
     dom = load_domain(domain_id, domains_path)
     user_inputs = user_inputs or {}
     axes, series, phrases, tested = [], {}, [], 0
