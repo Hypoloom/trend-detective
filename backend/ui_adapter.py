@@ -120,6 +120,9 @@ def to_ui(c, dataset_id, region_id):
         "simulated": bool(pv.get("simulated")),
         "caption": f"Values are yearly averages with the seasonal cycle removed (anomalies), not raw {units}.",
         "contract": c,
+        "fragile": bool(tr.get("fragile")),
+        "fragileNote": ("This result depends on a few extreme years: it is not significant when the most "
+                        "extreme years are left out.") if tr.get("fragile") else None,
     }
 
 

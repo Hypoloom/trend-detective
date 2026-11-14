@@ -6,9 +6,12 @@ import os, sys, time
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
 import pandas as pd
-import earthaccess
-from pydap.client import open_url
-from pydap.net import create_session
+try:
+    import earthaccess
+    from pydap.client import open_url
+    from pydap.net import create_session
+except ImportError:   # cache-only machines (e.g. frontend) don't need these
+    earthaccess = open_url = create_session = None
 
 # One entry per variable the engine can use. Add radiation etc. here later.
 VARIABLES = {
@@ -26,6 +29,8 @@ _session = None
 CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stream_cache")
 
 def _get_session():
+    if earthaccess is None:
+        raise RuntimeError("earthaccess/pydap are not installed: only cached data is available here")
     global _session
     if _session is None:
         auth = earthaccess.login(persist=True)
@@ -45,6 +50,8 @@ def _index_box(box):
 
 
 def _list_months(short_name, start, end):
+    if earthaccess is None:
+        raise RuntimeError("earthaccess/pydap are not installed: only cached data is available here")
     res = earthaccess.search_data(short_name=short_name,
                                   temporal=(f"{start}-01-01", f"{end}-12-31"), count=-1)
     out = []
