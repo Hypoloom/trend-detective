@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, Send, Trash2, ArrowLeft, CheckCircle2, AlertTriangle, HelpCircle, Sparkles, AlertCircle } from 'lucide-react';
-import TrendChart from './TrendChart';
-import { getAnswer, SAMPLE_CHIPS } from '../data/mockData';
+import AnswerCard from './AnswerCard';
+import { askAll, LIVE_CHIPS } from '../askAdapter';
 
 /**
  * Robot Icon Header Illustration
@@ -42,7 +42,16 @@ export default function ChatPanel({
   useEffect(() => {
     if (isOpen && initialDeepDive) {
       const section = initialDeepDive;
-      const initialAnswer = getAnswer(section.title, section);
+      const dd = section.deepDive || {};
+      const initialAnswer = {
+        kind: 'summary',
+        topic: section.title,
+        texts: {
+          plain: dd.plain || section.summary || '',
+          detailed: dd.detailed || '',
+          pro: dd.pro || ''
+        }
+      };
 
       setMessages([
         {
@@ -90,41 +99,23 @@ export default function ChatPanel({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Submit a question
-  const handleSendMessage = (textToSend) => {
-    const question = textToSend || inputText;
-    if (!question.trim()) return;
+  // Submit a question  
+  const handleSendMessage = async (textToSend) => {
+    const question = typeof textToSend === 'string' ? textToSend : inputText;
+    if (!question.trim() || isTyping) return;
 
     setHasError(false);
-    const userMsg = {
-      id: `user-${Date.now()}`,
-      sender: 'user',
-      text: question.trim(),
-      timestamp: new Date()
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { id: `user-${Date.now()}`, sender: 'user', text: question.trim(), timestamp: new Date() }]);
     setInputText('');
     setIsTyping(true);
-
-    // Simulate satellite data lookup delay
-    setTimeout(() => {
-      try {
-        const answer = getAnswer(question, currentSection);
-        const botMsg = {
-          id: `bot-${Date.now()}`,
-          sender: 'bot',
-          data: answer,
-          activeTab: 'plain',
-          timestamp: new Date()
-        };
-        setMessages((prev) => [...prev, botMsg]);
-      } catch (err) {
-        setHasError(true);
-      } finally {
-        setIsTyping(false);
-      }
-    }, 600);
+    try {
+      const data = await askAll(question.trim(), 'maharashtra');
+      setMessages((prev) => [...prev, { id: `bot-${Date.now()}`, sender: 'bot', data, activeTab: 'plain', timestamp: new Date() }]);
+    } catch (err) {
+      setMessages((prev) => [...prev, { id: `err-${Date.now()}`, sender: 'bot', error: err.message, timestamp: new Date() }]);
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   // Change answer tab (Plain, Detailed, Pro)
@@ -240,7 +231,7 @@ export default function ChatPanel({
                     Try asking:
                   </span>
                   <div className="chip-container">
-                    {SAMPLE_CHIPS.slice(0, 3).map((chip, idx) => (
+                      {LIVE_CHIPS.map((chip, idx) => (
                       <button
                         key={idx}
                         className="chip"
@@ -255,20 +246,16 @@ export default function ChatPanel({
             );
           }
 
-          // C) Bot Structured Answer (Plain | Detailed | Pro)
-          const { data, activeTab = 'plain' } = msg;
-          if (!data) return null;
 
-          const isSignificant = data.verdict === 'significant';
-          const isNotEnough = data.verdict === 'not_enough_data';
-          const badgeClass = isSignificant
-            ? 'badge-significant'
-            : (isNotEnough ? 'badge-nodata' : 'badge-unclear');
-
-          const badgeLabel = isSignificant
-            ? 'Significant result'
-            : (isNotEnough ? 'Not enough data' : 'Not significant yet');
-
+          // C) Bot answer (backend text, or Explorer summary for the deep dive)
+          if (msg.error) {
+            return (
+              <div key={msg.id} style={{ padding: '0.75rem 1rem', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)', color: '#991B1B', fontSize: '0.85rem' }}>
+                <AlertCircle size={15} style={{ display: 'inline', marginRight: '4px' }} />
+                Could not get an answer: {msg.error}. Is the backend running?
+              </div>
+            );
+          }
           return (
             <div
               key={msg.id}
@@ -281,122 +268,14 @@ export default function ChatPanel({
                 width: '100%'
               }}
             >
-              {/* Header: Topic & Verdict Badge */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.6rem' }}>
-                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-main)' }}>
-                  {data.matchedTopic || 'NASA Satellite Analysis'}
-                </span>
-                <span className={`badge ${badgeClass}`} style={{ fontSize: '0.75rem' }}>
-                  {badgeLabel}
-                </span>
-              </div>
-
-              {/* 3 Answer Tabs: Plain | Detailed | Pro */}
-              <div style={{ marginBottom: '1rem' }}>
-                <div className="tab-group" style={{ marginBottom: '0.75rem' }}>
-                  <button
-                    className={`tab-btn ${activeTab === 'plain' ? 'active' : ''}`}
-                    onClick={() => handleTabChange(msg.id, 'plain')}
-                  >
-                    Plain
-                  </button>
-                  <button
-                    className={`tab-btn ${activeTab === 'detailed' ? 'active' : ''}`}
-                    onClick={() => handleTabChange(msg.id, 'detailed')}
-                  >
-                    Detailed
-                  </button>
-                  <button
-                    className={`tab-btn ${activeTab === 'pro' ? 'active' : ''}`}
-                    onClick={() => handleTabChange(msg.id, 'pro')}
-                  >
-                    Pro
-                  </button>
-                </div>
-
-                {/* Tab Content */}
-                <div style={{ backgroundColor: 'var(--color-bg-card)', padding: '1rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', fontSize: '0.95rem', lineHeight: '1.6' }}>
-                  {activeTab === 'plain' && (
-                    <p style={{ margin: 0, fontWeight: 500, color: 'var(--color-text-main)' }}>
-                      {data.plain}
-                    </p>
-                  )}
-
-                  {activeTab === 'detailed' && (
-                    <div>
-                      <p style={{ margin: 0, color: 'var(--color-text-main)', marginBottom: '0.5rem' }}>
-                        {data.detailed}
-                      </p>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--color-text-light)', borderTop: '1px dashed var(--color-border)', paddingTop: '0.4rem', marginTop: '0.4rem' }}>
-                        🛰️ <strong>Sensor:</strong> {data.dataset} ({data.yearsUsed} years)
-                      </div>
-                    </div>
-                  )}
-
-                  {activeTab === 'pro' && (
-                    <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', color: 'var(--color-text-main)', display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                      <div>{data.pro}</div>
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.5rem', marginTop: '0.5rem', backgroundColor: 'var(--color-bg-subtle)', padding: '0.6rem', borderRadius: '4px' }}>
-                        <div><strong>Slope:</strong> {data.slopePerYear > 0 ? '+' : ''}{data.slopePerYear}/yr</div>
-                        <div><strong>p-value:</strong> {data.pValue}</div>
-                        <div><strong>95% CI:</strong> [{data.ci95?.[0]}, {data.ci95?.[1]}]</div>
-                        <div><strong>Sample:</strong> n = {data.yearsUsed}</div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Mini Trend Chart inside answer */}
-              {data.series && data.series.length > 0 && (
-                <div style={{ backgroundColor: 'var(--color-bg-card)', padding: '0.75rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border)', marginBottom: '0.75rem' }}>
-                  <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-light)', marginBottom: '0.4rem' }}>
-                    Observation Series & Trendline (1990–2025)
-                  </div>
-                  <TrendChart
-                    series={data.series}
-                    variable1Name="Observed"
-                    unit1=""
-                    height={160}
-                    showDownloadButtons={false}
-                    caption=""
-                  />
-                </div>
-              )}
-
-              {/* Data Gap callout if unclear */}
-              {!isSignificant && data.gap && (
-                <div style={{ padding: '0.75rem 1rem', backgroundColor: '#FFFBEB', borderRadius: 'var(--radius-md)', border: '1px solid #FDE68A', fontSize: '0.85rem', marginBottom: '0.75rem' }}>
-                  <strong style={{ color: '#92400E' }}>Data Gap: {data.gap.reason}</strong>
-                  <p style={{ margin: '0.2rem 0 0', color: '#78350F' }}>
-                    {data.gap.tip} ({data.gap.yearsHave} yrs collected, ~{data.gap.yearsNeed} needed)
-                  </p>
-                </div>
-              )}
-
-              {/* 3 Follow-Up Question Chips (as required) */}
-              {data.followUps && data.followUps.length > 0 && (
-                <div style={{ borderTop: '1px dashed var(--color-border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--color-text-light)', textTransform: 'uppercase' }}>
-                    Follow-up questions:
-                  </span>
-                  <div className="chip-container" style={{ marginTop: '0.35rem' }}>
-                    {data.followUps.map((chip, idx) => (
-                      <button
-                        key={idx}
-                        className="chip"
-                        style={{ backgroundColor: 'var(--color-bg-card)', borderColor: 'var(--color-accent-border)' }}
-                        onClick={() => handleSendMessage(chip)}
-                      >
-                        {chip}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
+              <AnswerCard
+                data={msg.data}
+                activeTab={msg.activeTab || 'plain'}
+                onTabChange={(t) => handleTabChange(msg.id, t)}
+                chartHeight={160}
+              />
             </div>
-          );
-        })}
+          );        })}
 
         {/* Typing indicator */}
         {isTyping && (
