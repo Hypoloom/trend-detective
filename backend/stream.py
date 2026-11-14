@@ -14,7 +14,11 @@ from pydap.net import create_session
 VARIABLES = {
     "t2m":    dict(short_name="M2TMNXSLV", var="T2M",         units="K",      scale=1.0),
     "precip": dict(short_name="M2TMNXFLX", var="PRECTOTCORR", units="mm/day", scale=86400.0),
+    "sunlight": dict(short_name="M2TMNXRAD", var="SWGDN",     units="W m-2",  scale=1.0),
+    "t2m_min": dict(short_name="M2SMNXSLV", var="T2MMIN",     units="K",      scale=1.0),
+    "t2m_max": dict(short_name="M2SMNXSLV", var="T2MMAX",     units="K",      scale=1.0),
 }
+
 LAT = -90.0 + 0.5 * np.arange(361)
 LON = -180.0 + 0.625 * np.arange(576)
 FILL = 1e14          # anything above this is fill (fill value is 1e15)

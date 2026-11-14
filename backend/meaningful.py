@@ -9,6 +9,10 @@ RULES = {
                      basis="5% of the long-term mean per decade; project choice, placeholder"),
     "sunlight": dict(kind="relative", pct_per_decade=2.0,
                      basis="2% of the long-term mean per decade; project choice, placeholder"),
+    "t2m_min":  dict(kind="absolute", per_year=0.02,
+                     basis="same as t2m: about the recent global warming rate; placeholder"),
+    "t2m_max":  dict(kind="absolute", per_year=0.02,
+                     basis="same as t2m: about the recent global warming rate; placeholder"),
 }
 
 
