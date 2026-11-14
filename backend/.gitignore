@@ -6,3 +6,6 @@ _netrc
 *.nc4
 data_cache/
 year_cache/
+precip_*.csv
+t2m_fetched.csv
+t2m_test.csv
