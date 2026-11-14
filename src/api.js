@@ -26,14 +26,14 @@ const SAT = 'NASA MERRA-2 reanalysis (model product)'
 const RES = 'Regional monthly mean, 1980-2025'
 
 export const LIVE_VARIABLES = [
-  { id: 'T2M', name: 'Air temperature (mean)', unit: 'K anomaly', satellite: SAT, resolution: RES,
+  { id: 'T2M', name: 'Air temperature (mean)', unit: 'K', satellite: SAT, resolution: RES,
     description: 'Monthly mean 2 m air temperature, seasonal cycle removed.' },
-  { id: 'T2M_MIN', name: 'Night air temperature', unit: 'K anomaly', satellite: SAT, resolution: RES,
+  { id: 'T2M_MIN', name: 'Night air temperature', unit: 'K', satellite: SAT, resolution: RES,
     description: 'Monthly mean of the daily minimum 2 m air temperature, seasonal cycle removed.' },
-  { id: 'T2M_MAX', name: 'Day air temperature', unit: 'K anomaly', satellite: SAT, resolution: RES,
+  { id: 'T2M_MAX', name: 'Day air temperature', unit: 'K', satellite: SAT, resolution: RES,
     description: 'Monthly mean of the daily maximum 2 m air temperature, seasonal cycle removed.' },
-  { id: 'PRECIP', name: 'Rainfall', unit: 'mm/day anomaly', satellite: SAT, resolution: RES,
+  { id: 'PRECIP', name: 'Rainfall', unit: 'mm/day', satellite: SAT, resolution: RES,
     description: 'Corrected precipitation, seasonal cycle removed. Treat as a candidate: possible product discontinuity after 2006.' },
-  { id: 'SUNLIGHT', name: 'Sunlight at the surface', unit: 'W m-2 anomaly', satellite: SAT, resolution: RES,
+  { id: 'SUNLIGHT', name: 'Sunlight at the surface', unit: 'W m-2', satellite: SAT, resolution: RES,
     description: 'Downward shortwave radiation at the surface, seasonal cycle removed. Experimental.' }
 ]
