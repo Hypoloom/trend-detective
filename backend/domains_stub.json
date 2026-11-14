@@ -1,0 +1,18 @@
+{"domains": [{
+  "id": "pond",
+  "description": "How long before a pond turns green with algae (stub for testing)",
+  "example_questions": ["How long can I leave my pond unattended before algae?"],
+  "keywords": ["pond", "algae", "green water"],
+  "axes": [
+    {"name": "air_temp", "label": "Air temperature", "source": "nasa_data", "critical": false, "variable": "t2m", "why_it_matters": "STUB"},
+    {"name": "rainfall", "label": "Rainfall", "source": "nasa_data", "critical": false, "variable": "precip", "why_it_matters": "STUB"},
+    {"name": "sunlight", "label": "Sunlight", "source": "nasa_data", "critical": false, "variable": "sunlight", "why_it_matters": "STUB"},
+    {"name": "shade", "label": "Shade over the pond", "source": "ask_user", "critical": false, "prompt": "How much of the pond is shaded?", "why_it_matters": "STUB"},
+    {"name": "pond_size", "label": "Pond size", "source": "ask_user", "critical": false, "prompt": "Roughly how big is the pond?", "why_it_matters": "STUB"},
+    {"name": "nutrient_load", "label": "Nutrient load", "source": "not_knowable", "critical": true, "why_it_matters": "STUB"},
+    {"name": "existing_algae", "label": "Algae already present", "source": "not_knowable", "critical": true, "why_it_matters": "STUB"}
+  ],
+  "risk_window_rule": {"axis": "air_temp", "n_months": 3, "direction": "highest",
+                       "definition": "STUB: the 3 calendar months with the highest average air temperature. Replace with a sourced rule."},
+  "abstain_policy": "If any critical axis is not analyzed, give a risk window and no number of days."
+}]}

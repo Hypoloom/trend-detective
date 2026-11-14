@@ -24,8 +24,12 @@ def _f(x, nd=6):
 def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=None):
     direction = "upward" if slope > 0 else "downward"
     if code == "detected":
-        return (f"A statistically significant {direction} trend of {slope:.3g} {units} "
+        text = (f"A statistically significant {direction} trend of {slope:.3g} {units} "
                 f"per year was found over {years} years of data.")
+        if meaningful and abs(slope) < meaningful:
+            text += (f" That is smaller than the {meaningful:g} {units} per year "
+                     "chosen as meaningful for this variable.")
+        return text
     if code == "data_limited":
         if nm is not None:
             lead = "To judge whether a meaningful trend exists, the record would need to be"
@@ -55,7 +59,7 @@ def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=Non
 
 
 def run_analysis(s, dataset, variable, units, region, regions=None,
-                 deseason=True, simulated=False, meaningful=None):
+                 deseason=True, simulated=False, meaningful=None, meaningful_rule=None):
     """s: monthly pd.Series (DatetimeIndex). regions: optional {name: monthly Series}.
     meaningful: smallest trend (units per year) that matters for this variable.
     Returns a JSON-safe dict. This is the only shape the frontend should depend on."""
@@ -90,9 +94,20 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
     if meaningful:
         caveats.append(f"'Meaningful' was set to {meaningful:g} {units} per year; "
                        "the verdict depends on that choice.")
+    
     if n_tested > 1:
         caveats.append(f"{n_tested} series were tested; some significant results can arise by chance.")
-
+        meaningful_block = None
+    if meaningful:
+        sens = []
+        if code != "detected":
+            for f in (0.5, 1.0, 2.0):
+                rr = analyze(s, regions=regions, deseason=deseason, meaningful=meaningful * f)
+                c, _ = VERDICTS[rr["verdict"]]
+                sens.append({"factor": f, "value": _f(meaningful * f, 6), "verdict_code": c,
+                             "needed_years": _f(rr["years_needed_meaningful"], 1)})
+        meaningful_block = {**(meaningful_rule or {}), "value": _f(meaningful, 6),
+                            "sensitivity": sens}
     return {
         "verdict": {"code": code, "label": label,
                     "summary": _summary(code, r["ts"], units, r["years_have"], lo, hi,
@@ -111,6 +126,7 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
                        "simulated": simulated},
         "caveats": caveats,
         "tested_count": n_tested,
+        "meaningful": meaningful_block,
     }
 
 
