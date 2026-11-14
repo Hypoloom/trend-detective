@@ -95,4 +95,40 @@ def test_plain_template_adds_association_wording_for_axis_trend():
 def test_plain_template_omits_it_when_no_axis_trend():
     assert "co-occurs with" not in phrase.template_phrase(_pond_result("no_trend"), "plain")
 
+# ---- fragile trends: the engine's "extreme years" sentence must reach the text ----
+FRAGILE_SENTENCE = ("This result depends on a few extreme years: it is not significant "
+                    "when the most extreme years are left out.")
+
+
+def _fragile_result(fragile, sentence_in_summary=True):
+    summary = "A statistically significant upward trend of 0.016 mm/day per year was found over 45.9 years of data."
+    if fragile and sentence_in_summary:
+        summary += " " + FRAGILE_SENTENCE
+    return {
+        "domain": "pond", "abstained": False,
+        "axes": [{"name": "rainfall", "label": "Rainfall", "status": "analyzed", "critical": False,
+                  "result": {"verdict": {"code": "detected", "label": "Trend detected", "summary": summary},
+                             "trend": {"slope_per_year": 0.016, "units": "mm/day",
+                                       "p_value_without_extreme_years": 0.0842, "fragile": fragile}}}],
+    }
+
+
+def test_fragile_sentence_reaches_every_level():
+    res = _fragile_result(True)
+    for level in ("plain", "detailed", "pro"):
+        text = phrase.template_phrase(res, level)
+        assert "depends on a few extreme years" in text, level
+        assert phrase.check_text(text, res).ok, (level, phrase.check_text(text, res).reasons)
+
+
+def test_not_fragile_has_no_extreme_years_sentence():
+    res = _fragile_result(False)
+    for level in ("plain", "detailed", "pro"):
+        assert "extreme years" not in phrase.template_phrase(res, level), level
+
+
+def test_fragile_falls_back_when_summary_lacks_sentence():
+    res = _fragile_result(True, sentence_in_summary=False)
+    for level in ("plain", "detailed", "pro"):
+        assert "depends on a few extreme years" in phrase.template_phrase(res, level), level
 
