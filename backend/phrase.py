@@ -404,7 +404,22 @@ def _meaningful_note(r):
             return _sentence(s)
     return ""
 
+_FRAGILE_FALLBACK = ("This result depends on a few extreme years: it is not significant "
+                     "when the most extreme years are left out.")
 
+
+def _fragile_note(r):
+    """For a result whose trend.fragile is True: the engine's own sentence about extreme years,
+    copied from verdict.summary. Falls back to the same wording if the summary lacks it, so a
+    fragile result is never shown as a plain 'Trend detected'."""
+    t = r.get("trend") or {}
+    if t.get("fragile") is not True:
+        return ""
+    v = r.get("verdict") or {}
+    for s in re.split(r"(?<=[.!?])\s+", str(v.get("summary") or "")):
+        if "extreme years" in s.lower():
+            return _sentence(s)
+    return _FRAGILE_FALLBACK
 def _axis_lines(result, level):
     """One short report per analyzed axis: label, verdict label, slope + units (more at detailed / pro)."""
     out = []
@@ -429,6 +444,9 @@ def _axis_lines(result, level):
         note = _meaningful_note(r)
         if note:
             line += " " + note
+        fragile = _fragile_note(r)
+        if fragile:
+            line += " " + fragile
         out.append(line)
     return out
 
@@ -473,6 +491,10 @@ def template_phrase(result, level="plain"):
         head.append(f"A trend in {where} may be hidden by noise, so this tool cannot say either way.")
     elif code:
         head.append(f"The result for {where} is inconclusive: there is not enough evidence to say.")
+    if code == "detected":
+        fn = _fragile_note(result)
+        if fn:
+            head.append(fn)
     # no top-level verdict: say nothing invented; the per-axis lines below carry the facts
 
     # abstention block + risk window
