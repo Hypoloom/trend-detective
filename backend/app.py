@@ -30,15 +30,10 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 #    still has to decide them (0.02 K/yr for T2M is only a placeholder).
 # ---------------------------------------------------------------------------
 DATASETS = {
-    "T2M": {
-        "label": "Air temperature at 2 m",
-        "units": "K",
-        "file": "t2m_fetched.csv",
-        "slope": 0.02,
-    },
-    # Add rainfall after you have fetched it, for example:
-    # "PRECTOTCORR": {"label": "Precipitation", "units": "kg m-2 s-1",
-    #                 "file": "prectotcorr_fetched.csv", "slope": None},
+    "T2M": {"label": "Air temperature at 2 m", "units": "K", "stream_key": "t2m",
+            "file": "stream_cache/t2m_72_16_80_21.csv", "slope": None},
+    "PRECIP": {"label": "Rainfall", "units": "mm/day", "stream_key": "precip",
+               "file": "stream_cache/precip_72_16_80_21.csv", "slope": None},
 }
 
 REGIONS = {
@@ -81,19 +76,11 @@ def clean(x):
 def error(message, code):
     return jsonify({"error": message}), code
 
-
 def get_series(dataset, region):
-    """Monthly pandas Series for (dataset, region), read from a saved CSV."""
-    info = DATASETS[dataset]
-    path = os.path.join(HERE, info["file"])
-    if not os.path.exists(path):
-        raise FileNotFoundError(
-            f"{info['file']} not found. Run fetch_opendap.py first "
-            f"(it saves this file)."
-        )
-    s = pd.read_csv(path, index_col=0, parse_dates=True).iloc[:, 0]
-    s.index.freq = "MS"
-    return s
+    """Monthly Series from the streaming cache (fetches from NASA if missing)."""
+    import stream
+    return stream.get_series(DATASETS[dataset]["stream_key"], tuple(REGIONS[region]["box"]),
+                             1980, 2025, verbose=False)
 
 
 def pick(args):
@@ -108,24 +95,20 @@ def pick(args):
                                  f"Choose one of {list(REGIONS)}", 400)
     return dataset, region, None
 
-
-def call_run_analysis(series, slope):
-    """
-    The ONE place that talks to your friend's contract.py.
-    I have not seen contract.py, so this adapts to what run_analysis accepts:
-    it passes the series first, and the slope by whatever its parameter is called.
-    If your friend's function looks different, edit only this function.
-    """
+def call_run_analysis(series, dataset, region, slope):
+    import stream
     from contract import run_analysis
-
-    params = inspect.signature(run_analysis).parameters
-    kwargs = {}
-    if slope is not None:
-        for name in params:
-            if "slope" in name.lower() or "meaningful" in name.lower():
-                kwargs[name] = slope
-                break
-    return run_analysis(series, **kwargs)
+    from meaningful import resolve
+    key = DATASETS[dataset]["stream_key"]
+    cfg = stream.VARIABLES[key]
+    rule = None
+    if slope is None:
+        m = resolve(key, series)
+        slope, rule = m["value"], {"rule": m["rule"], "basis": m["basis"]}
+    r = REGIONS[region]
+    return run_analysis(series, f"MERRA-2 {cfg['short_name']}", cfg["var"], cfg["units"],
+                        f"{r['label']} box {tuple(r['box'])}",
+                        meaningful=slope, meaningful_rule=rule)
 
 
 # ---------------------------------------------------------------------------
@@ -169,21 +152,18 @@ def series():
         "values": s.values,
     }))
 
-
 @app.get("/api/analysis")
 def analysis():
     dataset, region, err = pick(request.args)
     if err:
         return err
     slope = request.args.get("slope", type=float)
-    if slope is None:
-        slope = DATASETS[dataset]["slope"]
     try:
         s = get_series(dataset, region)
     except FileNotFoundError as e:
         return error(str(e), 404)
     try:
-        result = call_run_analysis(s, slope)
+        result = call_run_analysis(s, dataset, region, slope)
     except ImportError as e:
         return error(f"could not import contract.py: {e}. "
                      f"Keep app.py in the same folder as contract.py.", 500)
@@ -192,6 +172,17 @@ def analysis():
                      f"Edit call_run_analysis() in app.py.", 500)
     return jsonify(clean(result))
 
+
+@app.get("/api/answer")
+def answer_endpoint():
+    import answer
+    region = request.args.get("region", "maharashtra")
+    if region not in REGIONS:
+        return error(f"unknown region '{region}'. Choose one of {list(REGIONS)}", 400)
+    box = tuple(REGIONS[region]["box"])
+    out = answer.build(request.args.get("domain", "pond"),
+                       f"{REGIONS[region]['label']} box {box}", box, 1980, 2025)
+    return jsonify(clean(out))
 
 if __name__ == "__main__":
     # debug=True restarts the server when you edit a file. Turn it off for the demo.

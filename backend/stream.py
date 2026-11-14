@@ -19,7 +19,7 @@ LAT = -90.0 + 0.5 * np.arange(361)
 LON = -180.0 + 0.625 * np.arange(576)
 FILL = 1e14          # anything above this is fill (fill value is 1e15)
 _session = None
-
+CACHE_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "stream_cache")
 
 def _get_session():
     global _session
@@ -74,12 +74,12 @@ def _one_month(url, var, ib, scale):
     return float((a[ok] * w[ok]).sum() / w[ok].sum()) * scale
 
 
-def get_series(name, box, start, end, workers=16, cache_dir="stream_cache", verbose=True):
+def get_series(name, box, start, end, workers=32, cache_dir=CACHE_DIR, verbose=True):
     """Monthly area-mean series (pd.Series, month-start index) for VARIABLES[name] over box."""
     cfg = VARIABLES[name]
     ib = _index_box(box)
     os.makedirs(cache_dir, exist_ok=True)
-    key = f"{name}_{'_'.join(str(b) for b in box)}.csv"
+    key = f"{name}_{'_'.join(f'{float(b):g}' for b in box)}.csv"
     path = os.path.join(cache_dir, key)
     have = pd.Series(dtype=float)
     if os.path.exists(path):
