@@ -6,7 +6,7 @@ def load_giovanni_csv(path, min_valid_frac=0.8):
     """Giovanni time-series CSV -> monthly pd.Series (DatetimeIndex, MS freq)."""
     with open(path, encoding="utf-8-sig") as f:
         lines = f.read().splitlines()
-    start = next(i for i, ln in enumerate(lines) if ln.lower().startswith("time,"))
+    start = next(i for i, ln in enumerate(lines) if ln.lower().startswith(("time,", ",")))
     df = pd.read_csv(io.StringIO("\n".join(lines[start:])))
     t = pd.to_datetime(df.iloc[:, 0], utc=True).dt.tz_localize(None)
     v = pd.to_numeric(df.iloc[:, 1], errors="coerce")
