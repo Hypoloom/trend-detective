@@ -182,7 +182,16 @@ def _trend_reported(result):
     code = _verdict_code(result)
     return bool(code) and code not in _NON_TREND_CODES
 
-
+def _any_trend_reported(result):
+    """True if the top-level verdict or any analyzed axis reports a detected trend."""
+    if _verdict_code(result) == "detected":
+        return True
+    for a in result.get("axes") or []:
+        r = a.get("result")
+        if a.get("status") == "analyzed" and isinstance(r, dict) \
+                and (r.get("verdict") or {}).get("code") == "detected":
+            return True
+    return False
 def _slopes(result):
     """Every numeric value under a key containing 'slope' (keys with 'meaning' are skipped)."""
     found = []
@@ -491,6 +500,9 @@ def template_phrase(result, level="plain"):
     if not lines:
         lines = ["This result has no overall verdict."]
     if level == "plain":
+        if _any_trend_reported(result):
+            lines.append("Any trend reported here co-occurs with the question you asked about; "
+                         "it is not an explanation.")
         return " ".join(lines)
 
     ci = t.get("slope_ci")

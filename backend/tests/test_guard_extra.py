@@ -65,3 +65,34 @@ def test_trend_with_association_wording_passes_that_check():
     assert not has(rs, "co-occurs with' or")
     rs = reasons("Night temperature is associated with the pond question.", TREND)
     assert not has(rs, "co-occurs with' or")
+
+    
+
+# ---- risk-window comparison sentence: "higher than" / "lower than" is not a direction word ----
+def test_higher_lower_comparison_is_not_a_direction_word():
+    for word in ("higher", "lower"):
+        text = f"In the last 20 years of the record these months averaged 0.5 K {word} than in the 26 years before."
+        for res in (NO_TREND, {**TREND, "slope": 0.5}, {**TREND, "slope": -0.5}):
+            probs = phrase.extra_problems(text, text.lower(), res, [20, 26, 0.5])
+            assert not has(probs, "direction wording"), (word, res, probs)
+
+
+# ---- per-axis trends need association wording, at plain level too ----
+def _pond_result(code):
+    return {
+        "domain": "pond", "abstained": True,
+        "abstain_reason": "Cannot give a number. These critical factors are unknown here: Nutrient load.",
+        "axes": [{"name": "rainfall", "label": "Rainfall", "status": "analyzed", "critical": False,
+                  "result": {"verdict": {"code": code, "label": "Trend detected" if code == "detected" else "No trend found"},
+                             "trend": {"slope_per_year": 0.00632509, "units": "mm/day"}}}],
+    }
+
+
+def test_plain_template_adds_association_wording_for_axis_trend():
+    assert "co-occurs with" in phrase.template_phrase(_pond_result("detected"), "plain")
+
+
+def test_plain_template_omits_it_when_no_axis_trend():
+    assert "co-occurs with" not in phrase.template_phrase(_pond_result("no_trend"), "plain")
+
+
