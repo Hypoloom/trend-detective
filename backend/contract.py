@@ -27,7 +27,7 @@ def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=Non
         text = (f"A statistically significant {direction} trend of {slope:.3g} {units} "
                 f"per year was found over {years} years of data.")
         if meaningful and abs(slope) < meaningful:
-            text += (f" That is smaller than the {meaningful:g} {units} per year "
+            text += (f" That is smaller than the {meaningful:.3g} {units} per year "
                      "chosen as meaningful for this variable.")
         return text
     if code == "data_limited":

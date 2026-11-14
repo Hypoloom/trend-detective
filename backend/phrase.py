@@ -213,7 +213,7 @@ def _join_names(names):
     return ", ".join(names[:-1]) + " and " + names[-1]
 
 
-_WINDOW_TOPIC = {"pond": "conditions that favor algae"}
+_WINDOW_TOPIC = {"pond": "the highest average air temperature"}
 
 
 def _risk_window_text(rw, domain=None, level="plain"):
