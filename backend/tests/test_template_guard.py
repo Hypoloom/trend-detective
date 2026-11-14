@@ -62,6 +62,24 @@ CASES = {
                           "axes": [{"name": "rainfall", "label": "Rainfall", "status": "analyzed",
                                     "result": {"verdict": {"code": "data_limited", "label": "Data limited"},
                                                "trend": {"units": "mm/day"}}}]},
+    # --- years.needed_high may become None (engine change planned): nothing may crash or print "None" ---
+    "needed_high_none_data_limited": {
+        "verdict": {"code": "data_limited", "label": "Data limited"},
+        "years": {"have": 12, "needed_low": 18, "needed_high": None, "needed_for_meaningful": 30}},
+    "needed_high_none_and_meaningful_none": {
+        "verdict": {"code": "data_limited", "label": "Data limited"},
+        "years": {"have": 12, "needed_low": 18, "needed_high": None, "needed_for_meaningful": None}},
+    "needed_high_none_detected_top_level": {
+        "verdict": {"code": "detected", "label": "Trend detected"},
+        "trend": {"slope_per_year": 0.016, "units": "mm/day"},
+        "years": {"have": 46, "needed_low": 18, "needed_high": None, "needed_for_meaningful": 30},
+        "axes": [{"name": "rainfall", "label": "Rainfall", "status": "analyzed"}]},
+    "needed_high_none_in_axis_result": {
+        "domain": "pond", "abstained": False,
+        "axes": [dict(_ax("air_temperature", "Air temperature", "no_trend", 0.0036),
+                      result={"verdict": {"code": "no_trend", "label": "No trend found"},
+                              "trend": {"slope_per_year": 0.0036, "units": "K"},
+                              "years": {"have": 46, "needed_low": 18, "needed_high": None}})]},
 }
 
 
@@ -102,3 +120,23 @@ def test_failed_template_guard_is_reported_in_the_note(monkeypatch):
     _, rep = phrase.phrase_with_report(
         res, "plain", phrase.CallableAdapter(lambda s, u: "Rainfall co-occurs with a yearly change of 0.016 mm/day."))
     assert rep.source == "llm" and rep.note == "passed guard"
+
+
+NEEDED_HIGH_CASES = [n for n in CASES if n.startswith("needed_high_none")]
+
+
+@pytest.mark.parametrize("level", phrase.LEVELS)
+@pytest.mark.parametrize("name", NEEDED_HIGH_CASES)
+def test_needed_high_none_never_leaks_into_text_or_adapter(name, level):
+    res = CASES[name]
+    text = phrase.template_phrase(res, level)
+    assert "None" not in text and "null" not in text and "nan" not in text.lower().split(), (name, level, text)
+    seen = {}
+
+    def fake(system, user):
+        seen["user"] = user
+        return text                       # a writer that repeats the template
+
+    out, rep = phrase.phrase_with_report(res, level, phrase.CallableAdapter(fake))
+    assert "needed_high" in seen["user"] and "null" in seen["user"]   # sent as JSON null, not the string "None"
+    assert rep.source == "llm", rep.note

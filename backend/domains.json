@@ -3,7 +3,7 @@
     "id": "pond",
     "description": "How long before a pond turns green with algae",
     "example_questions": ["How long can I leave my pond unattended before algae?"],
-    "keywords": ["pond", "algae", "algal", "bloom", "scum", "green water"],
+    "keywords": ["pond", "algae", "algal", "bloom", "scum", "green water", "green", "murky"],
     "axes": [
       {"name": "air_temp", "label": "Air temperature", "source": "nasa_data", "critical": false, "variable": "t2m",
        "why_it_matters": "Checked from NASA data. Its effect on algae is not sourced here.", "evidence_status": "UNVERIFIED"},
