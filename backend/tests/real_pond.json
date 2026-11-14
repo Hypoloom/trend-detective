@@ -23,16 +23,18 @@
      "meaningful_slope": 0.02
     },
     "trend": {
-     "slope_per_year": 0.00448129,
+     "slope_per_year": 0.00359828,
      "slope_ci": [
-      -0.00030422,
-      0.00911664
+      -0.00343956,
+      0.01135133
      ],
      "ols_slope_per_year": 0.00411417,
      "p_value": 0.2366,
      "p_value_method": "Mann-Kendall (Kendall tau) on annual means",
      "min_detectable_slope": 0.012839,
-     "units": "K"
+     "units": "K",
+     "p_value_without_extreme_years": 0.4449,
+     "fragile": false
     },
     "noise": {
      "sigma": 0.7887,
@@ -228,15 +230,15 @@
      "trend_line": [
       {
        "year": 1980.5,
-       "trend": -0.1266,
-       "low": -0.230895,
-       "high": -0.018926
+       "trend": -0.106732,
+       "low": -0.281176,
+       "high": 0.051619
       },
       {
        "year": 2025.5,
-       "trend": 0.075058,
-       "low": -0.032616,
-       "high": 0.179354
+       "trend": 0.05519,
+       "low": -0.103161,
+       "high": 0.229634
       }
      ],
      "seasonality_removed": true
@@ -293,7 +295,7 @@
     "verdict": {
      "code": "detected",
      "label": "Trend detected",
-     "summary": "A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0147 mm/day per year chosen as meaningful for this variable."
+     "summary": "A statistically significant upward trend of 0.016 mm/day per year was found over 45.9 years of data. This result depends on a few extreme years: it is not significant when the most extreme years are left out."
     },
     "years": {
      "have": 45.9,
@@ -304,16 +306,18 @@
      "meaningful_slope": 0.014658711748443035
     },
     "trend": {
-     "slope_per_year": 0.00632509,
+     "slope_per_year": 0.01598932,
      "slope_ci": [
-      0.00190982,
-      0.01155708
+      0.002463,
+      0.02853511
      ],
      "ols_slope_per_year": 0.01550156,
      "p_value": 0.0166,
      "p_value_method": "Mann-Kendall (Kendall tau) on annual means",
      "min_detectable_slope": 0.015868,
-     "units": "mm/day"
+     "units": "mm/day",
+     "p_value_without_extreme_years": 0.0842,
+     "fragile": true
     },
     "noise": {
      "sigma": 1.4961,
@@ -509,15 +513,15 @@
      "trend_line": [
       {
        "year": 1980.5,
-       "trend": -0.198334,
-       "low": -0.316053,
-       "high": -0.09899
+       "trend": -0.35838,
+       "low": -0.64066,
+       "high": -0.054037
       },
       {
        "year": 2025.5,
-       "trend": 0.086295,
-       "low": -0.013048,
-       "high": 0.204015
+       "trend": 0.36114,
+       "low": 0.056798,
+       "high": 0.64342
       }
      ],
      "seasonality_removed": true
@@ -555,7 +559,7 @@
     "verdict": {
      "code": "detected",
      "label": "Trend detected",
-     "summary": "A statistically significant downward trend of -0.315 W m-2 per year was found over 45.9 years of data. That is smaller than the 0.471 W m-2 per year chosen as meaningful for this variable."
+     "summary": "A statistically significant downward trend of -0.238 W m-2 per year was found over 45.9 years of data. That is smaller than the 0.471 W m-2 per year chosen as meaningful for this variable."
     },
     "years": {
      "have": 45.9,
@@ -566,16 +570,18 @@
      "meaningful_slope": 0.4713693692000291
     },
     "trend": {
-     "slope_per_year": -0.31463293,
+     "slope_per_year": -0.23796903,
      "slope_ci": [
-      -0.38769209,
-      -0.24026075
+      -0.34692464,
+      -0.15514305
      ],
      "ols_slope_per_year": -0.26945285,
      "p_value": 0.0,
      "p_value_method": "Mann-Kendall (Kendall tau) on annual means",
      "min_detectable_slope": 0.142296,
-     "units": "W m-2"
+     "units": "W m-2",
+     "p_value_without_extreme_years": 0.0,
+     "fragile": false
     },
     "noise": {
      "sigma": 12.4407,
@@ -771,15 +777,15 @@
      "trend_line": [
       {
        "year": 1980.5,
-       "trend": 6.983563,
-       "low": 5.310189,
-       "high": 8.627394
+       "trend": 5.805995,
+       "low": 3.94241,
+       "high": 8.257496
       },
       {
        "year": 2025.5,
-       "trend": -7.174919,
-       "low": -8.81875,
-       "high": -5.501545
+       "trend": -4.902611,
+       "low": -7.354113,
+       "high": -3.039027
       }
      ],
      "seasonality_removed": true
@@ -873,11 +879,11 @@
   },
   {
    "id": "axis:rainfall",
-   "text": "Rainfall: A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0147 mm/day per year chosen as meaningful for this variable."
+   "text": "Rainfall: A statistically significant upward trend of 0.016 mm/day per year was found over 45.9 years of data. This result depends on a few extreme years: it is not significant when the most extreme years are left out."
   },
   {
    "id": "axis:sunlight",
-   "text": "Sunlight: A statistically significant downward trend of -0.315 W m-2 per year was found over 45.9 years of data. That is smaller than the 0.471 W m-2 per year chosen as meaningful for this variable."
+   "text": "Sunlight: A statistically significant downward trend of -0.238 W m-2 per year was found over 45.9 years of data. That is smaller than the 0.471 W m-2 per year chosen as meaningful for this variable."
   },
   {
    "id": "abstain",

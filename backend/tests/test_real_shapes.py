@@ -211,11 +211,10 @@ class BaseRateSentenceTests(unittest.TestCase):
                 self.assertNotIn("fit the window definition", text)
                 self.assertNotIn(". years in which", text)
 
-
 class MeaningfulSentenceTests(unittest.TestCase):
-    SENTENCE = "That is smaller than the 0.0147 mm/day per year chosen as meaningful for this variable."
+    SENTENCE = "That is smaller than the 0.471 W m-2 per year chosen as meaningful for this variable."
 
-    def test_rainfall_in_pond_gets_engine_sentence(self):
+    def test_sunlight_in_pond_gets_engine_sentence(self):
         r = load_pond()
         for lvl in LEVELS:
             with self.subTest(level=lvl):
@@ -223,32 +222,35 @@ class MeaningfulSentenceTests(unittest.TestCase):
                 self.assertIn(self.SENTENCE, text)
                 self.assertTrue(check_text(text, r).ok, check_text(text, r).reasons)
 
-    def test_sentence_sits_with_the_rainfall_line_only(self):
+    def test_sentence_sits_with_the_sunlight_line_only(self):
         text = phrase(load_pond(), "plain")
         self.assertEqual(text.count(self.SENTENCE), 1)
-        self.assertGreater(text.index(self.SENTENCE), text.index("Rainfall:"))
+        self.assertGreater(text.index(self.SENTENCE), text.index("Sunlight:"))
+
+    def test_rainfall_slope_now_above_threshold_has_no_sentence(self):
+        self.assertNotIn("0.0147", phrase(load_pond(), "plain"))
 
     def test_not_added_when_no_trend(self):
         # a no_trend axis never gets the sentence, even if its summary happened to contain it
         pond = load_pond()
         pond["axes"][0]["result"]["verdict"]["summary"] = self.SENTENCE
         text = phrase(pond, "plain")
-        self.assertEqual(text.count(self.SENTENCE), 1)                 # only the rainfall one
-        self.assertGreater(text.index(self.SENTENCE), text.index("Rainfall:"))
+        self.assertEqual(text.count(self.SENTENCE), 1)                 # only the sunlight one
+        self.assertGreater(text.index(self.SENTENCE), text.index("Sunlight:"))
 
     def test_not_added_when_slope_is_meaningful(self):
         pond = load_pond()
-        pond["axes"][1]["result"]["trend"]["slope_per_year"] = 0.05
+        pond["axes"][2]["result"]["trend"]["slope_per_year"] = 0.6
         self.assertNotIn(self.SENTENCE, phrase(pond, "plain"))
 
     def test_not_added_without_meaningful_value_or_sentence(self):
         pond = load_pond()
-        del pond["axes"][1]["result"]["meaningful"]
+        del pond["axes"][2]["result"]["meaningful"]
         self.assertNotIn(self.SENTENCE, phrase(pond, "plain"))
         pond = load_pond()
-        pond["axes"][1]["result"]["verdict"]["summary"] = "A trend was detected in rainfall."
+        pond["axes"][2]["result"]["verdict"]["summary"] = "A trend was detected in sunlight."
         text = phrase(pond, "plain")
-        self.assertNotIn("0.0147", text)           # nothing is invented for rainfall (sunlight's own sentence is fine)          # nothing is invented
+        self.assertNotIn("smaller than", text)           # nothing is invented
 
 
 class SignificantFigureTests(unittest.TestCase):
@@ -266,16 +268,16 @@ class SignificantFigureTests(unittest.TestCase):
         for lvl in ("plain", "detailed"):
             with self.subTest(level=lvl):
                 text = phrase(r, lvl)
-                self.assertIn("slope 0.00448 K per year", text)
-                self.assertNotIn("0.00448129", text)
-        self.assertIn("slope 0.00448129 K per year", phrase(r, "pro"))
+                self.assertIn("slope 0.0036 K per year", text)
+                self.assertNotIn("0.00359828", text)
+        self.assertIn("slope 0.00359828 K per year", phrase(r, "pro"))
 
     def test_guard_accepts_three_figure_form_and_still_rejects_wrong_numbers(self):
         r = axis_result("air_temp")
-        self.assertTrue(check_text("No trend was found; slope 0.00448 K per year.", r).ok)
-        self.assertTrue(check_text("No trend was found; slope 0.00448129 K per year.", r).ok)
+        self.assertTrue(check_text("No trend was found; slope 0.0036 K per year.", r).ok)
+        self.assertTrue(check_text("No trend was found; slope 0.00359828 K per year.", r).ok)
         self.assertFalse(check_text("No trend was found; slope 0.0045 K per year.", r).ok)
-
+        
     def test_detected_headline_three_figures(self):
         r = axis_result("air_temp")
         r["verdict"].update(code="detected", label="Trend detected")
