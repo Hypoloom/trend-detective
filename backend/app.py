@@ -185,6 +185,56 @@ def answer_endpoint():
                        f"{REGIONS[region]['label']} box {box}", box, 1980, 2025)
     return jsonify(clean(out))
 
+@app.route("/api/ask", methods=["GET", "POST"])
+def ask_endpoint():
+    """Question in, phrased answer out. LLM off: router -> answer.build -> template phrase."""
+    import answer
+    import phrase
+    import router
+    from fallback_form import form_to_text
+
+    body = request.get_json(silent=True) or {}
+
+    def arg(name, default=None):
+        return body.get(name, request.args.get(name, default))
+
+    question = str(arg("question", "") or "").strip()
+    if not question:
+        return error("missing 'question'", 400)
+    region = arg("region", "maharashtra")
+    if region not in REGIONS:
+        return error(f"unknown region '{region}'. Choose one of {list(REGIONS)}", 400)
+    level = arg("level", "plain")
+    if level not in ("plain", "detailed", "pro"):
+        return error("level must be plain, detailed or pro", 400)
+    user_inputs = arg("user_inputs", {}) or {}
+    if not isinstance(user_inputs, dict):
+        return error("user_inputs must be an object", 400)
+
+    r = router.route(question)
+    if r.is_fallback:
+        return jsonify(clean({"fallback": True, "reason": r.reason, "form": r.form,
+                              "form_text": form_to_text(r.form), "used_llm": False}))
+
+    label = REGIONS[region]["label"]
+    box = tuple(REGIONS[region]["box"])
+    dom = answer.load_domain(r.domain)
+    allowed = {a["name"] for a in dom["axes"] if a["source"] == "ask_user"}
+    unknown = sorted(set(user_inputs) - allowed)
+    if unknown:
+        return error(f"unknown user_inputs {unknown}. Allowed for {r.domain}: {sorted(allowed)}", 400)
+    inputs = dict(user_inputs)
+    if "region" in allowed:
+        inputs.setdefault("region", label)
+
+    out = answer.build(r.domain, label, box, 1980, 2025, user_inputs=inputs)
+    text, rep = phrase.phrase_with_report(out, level)
+    return jsonify(clean({"fallback": False, "domain": r.domain, "confidence": r.confidence,
+                          "route_source": r.source, "level": level, "text": text,
+                          "used_llm": rep.source == "llm", "phrase_note": rep.note,
+                          "abstained": out["abstained"], "result": out}))
+
+
 if __name__ == "__main__":
     # debug=True restarts the server when you edit a file. Turn it off for the demo.
     app.run(host="127.0.0.1", port=8000, debug=True)

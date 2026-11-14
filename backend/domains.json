@@ -30,7 +30,7 @@
     "id": "citrus",
     "description": "Why oranges (citrus fruit) are small",
     "example_questions": ["Why are my oranges so small this year?"],
-    "keywords": ["citrus", "orange", "oranges", "lemon", "mandarin", "fruit", "orchard", "grove", "small oranges"],
+    "keywords": ["citrus", "orange", "oranges", "lemon", "mandarin", "fruit", "orchard", "grove", "small oranges", "small", "tiny", "size", "fruit size"],
     "axes": [
       {"name": "region", "label": "Where the trees are", "source": "ask_user", "critical": true,
        "prompt": "Which region are the trees in?",
