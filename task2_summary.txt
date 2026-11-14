@@ -1,0 +1,59 @@
+# Task 2: Sub-monthly temperature (night-time temperature and chill hours)
+
+Pilot is monthly, so the hourly/daily timing runs were postponed. Existence of products was checked, and a monthly day/night product was fetched.
+
+## Findings (VERIFIED, run locally unless noted)
+
+| Product | Exists | Variables | File size (1 file, whole globe) |
+|---|---|---|---|
+| M2T1NXSLV (hourly) | Yes | T2M | 394 MB per day |
+| M2SDNXSLV (daily stats) | Yes | T2M, T2MMAX, T2MMIN, T2MMEAN | 1.57 MB per day |
+| M2SMNXSLV (monthly stats) | Yes | T2M, T2MMAX, T2MMIN, T2MMEAN | 8.0 MB per month |
+
+- Daily min/max exists as a ready product (M2SDNXSLV). Per NASA docs the daily max/min are saved from the model time step in which they occur.
+- Per NASA docs (VERIFIED, read), M2SMNXSLV holds monthly means of daily statistics, so monthly T2MMAX = average of daily highs, T2MMIN = average of daily lows. It is not the single hottest or coldest reading of the month.
+- Units K, fill value 9.99999987e+14 (read from the file; stream.py FILL = 1e14 handles it).
+
+## Monthly fetch, box (72, 16, 80, 21), 1980-2025
+
+| Quantity | Predicted | Measured | Result |
+|---|---|---|---|
+| Months / NaN | 552 / 0 | 552 / 0 | Match |
+| T2MMAX mean | 303 to 306 K | 305.91 K | Match |
+| T2MMAX hottest month | 309 to 314 K, Apr/May | 314.45 K, May 1984 | Miss (0.45 K high) |
+| T2MMIN mean | 293 to 296 K | 293.85 K | Match |
+| T2MMIN coldest month | 288 to 292 K, Dec/Jan | 285.90 K, Dec 2025 | Miss (2.1 K low) |
+| Day-night gap mean | 7 to 12 K | 12.05 K | Miss (by 0.05) |
+| T2MMIN < T2M < T2MMAX | all months | 552 of 552 | Match |
+| Run time per variable | about 80 s | 126.5 s (max), 82.3 s (min) | Miss for max |
+
+Mean day-night gap by month (K): Jan 15.55, Feb 16.58, Mar 16.38, Apr 15.35, May 13.45, Jun 8.99, Jul 6.95, Aug 6.71, Sep 7.39, Oct 10.04, Nov 12.69, Dec 14.56. Largest in the dry season, smallest in the monsoon.
+
+Where the prediction was wrong: cold nights colder than guessed, and the gap range too narrow (seasonal swing 6.7 to 16.6 K).
+
+## stream.py diff (not committed)
+```diff
++    "t2m_max": dict(short_name="M2SMNXSLV", var="T2MMAX", units="K", scale=1.0),
++    "t2m_min": dict(short_name="M2SMNXSLV", var="T2MMIN", units="K", scale=1.0),
+```
+
+## Trend test on day-time, night-time and gap (engine, meaningful = 0.02 K/yr test value, VERIFIED, run locally)
+
+| Series | Verdict | Slope (Theil-Sen) K/yr | 95% range | p-value | Needed for meaningful |
+|---|---|---|---|---|---|
+| T2MMAX (day) | no_trend | -0.00608 | -0.01285 to +0.00054 | 0.4101 | 42.6 y |
+| T2MMIN (night) | detected | +0.01352 | +0.00925 to +0.01780 | 0.0001 | 32.2 y |
+| Gap (max minus min) | detected | -0.01923 | -0.02545 to -0.01298 | 0.0041 | 39.6 y |
+
+Predicted vs measured: night slope in +0.003 to +0.015 and larger than day (Match); day slope -0.005 to +0.008 (Miss, -0.0061); day not significant (Match); night p-value 0.02 to 0.3 (Miss, 0.0001); gap negative (Match).
+
+Reading: nights warm about 0.62 K over 45.9 years, days do not change significantly, so the day-night gap narrows by about 0.9 K. The mean temperature (T2M, p = 0.24) hides this split. The OLS slopes add up exactly (-0.00573 - 0.01338 = -0.01911, the gap OLS slope). The gap is derived from the other two series, so it is not an independent finding.
+Cautions: one box only; MERRA-2 is a reanalysis, not station data; 0.0135 K/yr is below the 0.02 test value for "meaningful"; the day-time verdict is close to flipping (needs 42.6 of 45.9 years).
+
+## Not done / UNVERIFIED
+- Cost of 46 years of daily or hourly streaming: not timed. Earlier estimate (daily 25 to 60 min, hourly 45 min to 4 h) stays UNVERIFIED.
+- Chill hours need hourly data. Monthly statistics cannot give them.
+- Daily files exist for 2020 (checked 3 days only); other years not checked.
+
+## Not committed
+`stream_cache/`, any CSV.
