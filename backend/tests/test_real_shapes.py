@@ -1,4 +1,4 @@
-"""Tests built from the shape of REAL engine output (answer.build / contract), not the old mocks.
+﻿"""Tests built from the shape of REAL engine output (answer.build / contract), not the old mocks.
 
 tests/real_pond.json must be replaced by real output once available:
     python answer.py pond > tests/real_pond.json
@@ -8,7 +8,7 @@ import json
 import os
 import unittest
 
-from phrase import (CallableAdapter, LEVELS, _fmt, _risk_window_text, allowed_numbers,
+from phrase import (CallableAdapter, LEVELS, _fmt, _fmt_sig, _risk_window_text, allowed_numbers,
                     check_text, phrase, phrase_with_report, template_phrase)
 from router import STUB_DOMAINS, route
 
@@ -61,7 +61,7 @@ class RealPondTemplateTests(unittest.TestCase):
     def test_risk_window_sentence(self):
         text = phrase(load_pond(), "plain")
         self.assertIn("April, May and June", text)
-        self.assertIn("12 of 20 years", text)
+        self.assertIn("In 12 of the last 20 years, these months averaged above the record's own average.", text)
 
     def test_skips_not_analyzed_axes_in_axis_report(self):
         text = phrase(load_pond(), "plain")
@@ -76,7 +76,7 @@ class RealPondTemplateTests(unittest.TestCase):
 
 class RiskWindowTextTests(unittest.TestCase):
     RW = {"months": [4, 5, 6], "month_names": ["April", "May", "June"],
-          "base_rate": {"years_met": 12, "years_total": 20, "statement": ""},
+          "base_rate": {"years_met": 12, "years_total": 20, "statement": ""},   # no statement text
           "caveat": "This is a window, not a forecast"}      # note: no full stop
 
     def test_full_stop_after_risk_window_text(self):
@@ -95,7 +95,7 @@ class RiskWindowTextTests(unittest.TestCase):
         out = _risk_window_text(self.RW, "pond", "pro")
         for bad in ("[", "]", "{", "}", "months:", "base_rate", "years_met"):
             self.assertNotIn(bad, out)
-        self.assertIn("12 of the 20 years", out)
+        self.assertIn("12 of the last 20 years", out)
 
     def test_engine_caveat_used_as_is(self):
         self.assertIn("This is a window, not a forecast.", _risk_window_text(self.RW, "pond"))
@@ -104,10 +104,9 @@ class RiskWindowTextTests(unittest.TestCase):
 class GuardOnEngineTextTests(unittest.TestCase):
     def test_engine_words_do_not_trip_guard(self):
         r = load_pond()
-        text = ("This tool cannot give a definite answer here. Not finding a trend is not proof there isn't one. "
-                "2 data series were tested; results co-occur with each other and do not show cause.")
+        engine = [c if isinstance(c, str) else str(c.get("text", "")) for c in r["caveats"]]
+        text = " ".join(["This tool cannot give a definite answer here."] + engine)
         self.assertTrue(check_text(text, r).ok, check_text(text, r).reasons)
-
     def test_llms_own_causal_word_still_rejected(self):
         r = load_pond()
         for bad in ("It rains because the season changes.", "Heat caused the change.", "This is proof."):
@@ -137,10 +136,11 @@ class LongDecimalTests(unittest.TestCase):
     LONG = 0.00448129
 
     def test_formatter_output_is_accepted(self):
-        r = axis_result("air_temp")
-        self.assertEqual(r["trend"]["slope_per_year"], self.LONG)
-        shown = _fmt(self.LONG)
-        self.assertNotEqual(float(shown), self.LONG)         # the rounding really changes the value
+        r = copy.deepcopy(axis_result("air_temp"))
+        long_val = 0.004480123456789          # test's own long decimal, independent of the fixture
+        r["trend"]["slope_per_year"] = long_val
+        shown = _fmt(long_val)
+        self.assertNotEqual(float(shown), long_val)          # the rounding really changes the value
         g = check_text(f"No trend was found; slope {shown} K per year.", r)
         self.assertTrue(g.ok, g.reasons)
         self.assertIn(float(shown), allowed_numbers(r))
@@ -174,7 +174,116 @@ class LongDecimalTests(unittest.TestCase):
 
     def test_detected_path_prints_rounded_slope(self):
         r = axis_result("rainfall")
-        self.assertIn(_fmt(r["trend"]["slope_per_year"]), phrase(r, "plain"))
+        self.assertIn(_fmt_sig(r["trend"]["slope_per_year"]), phrase(r, "plain"))
+        self.assertIn(_fmt(r["trend"]["slope_per_year"]), phrase(r, "pro"))
+
+
+class BaseRateSentenceTests(unittest.TestCase):
+    def rw(self, statement, met=12, total=20):
+        return {"month_names": ["April"], "base_rate": {"years_met": met, "years_total": total,
+                                                        "statement": statement}}
+
+    def test_fragment_becomes_one_sentence(self):
+        out = _risk_window_text(self.rw("years in which these months averaged above the record's own average."),
+                                "pond", "detailed")
+        self.assertIn("In 12 of the last 20 years, these months averaged above the record's own average.", out)
+        self.assertNotIn("fit the window definition", out)
+        self.assertNotIn("years in which", out)
+        self.assertNotIn(". years", out)             # no lowercase fragment after a full stop
+
+    def test_fragment_without_final_stop(self):
+        out = _risk_window_text(self.rw("years in which these months averaged above the record's own average"),
+                                "pond")
+        self.assertIn("own average.", out)
+
+    def test_statement_that_already_has_the_numbers(self):
+        out = _risk_window_text(self.rw("these months met it in 12 of 20 years."), "pond")
+        self.assertIn("These months met it in 12 of 20 years.", out)
+        self.assertNotIn("In 12 of the last 20", out)
+
+    def test_no_statement(self):
+        self.assertIn("The window was met in 12 of the last 20 years.", _risk_window_text(self.rw(""), "pond"))
+
+    def test_full_text_has_no_garbled_pieces(self):
+        for lvl in LEVELS:
+            with self.subTest(level=lvl):
+                text = phrase(load_pond(), lvl)
+                self.assertNotIn("fit the window definition", text)
+                self.assertNotIn(". years in which", text)
+
+
+class MeaningfulSentenceTests(unittest.TestCase):
+    SENTENCE = "That is smaller than the 0.0146587 mm/day per year chosen as meaningful for this variable."
+
+    def test_rainfall_in_pond_gets_engine_sentence(self):
+        r = load_pond()
+        for lvl in LEVELS:
+            with self.subTest(level=lvl):
+                text = phrase(r, lvl)
+                self.assertIn(self.SENTENCE, text)
+                self.assertTrue(check_text(text, r).ok, check_text(text, r).reasons)
+
+    def test_sentence_sits_with_the_rainfall_line_only(self):
+        text = phrase(load_pond(), "plain")
+        self.assertEqual(text.count(self.SENTENCE), 1)
+        self.assertGreater(text.index(self.SENTENCE), text.index("Rainfall:"))
+
+    def test_not_added_when_no_trend(self):
+        # a no_trend axis never gets the sentence, even if its summary happened to contain it
+        pond = load_pond()
+        pond["axes"][0]["result"]["verdict"]["summary"] = self.SENTENCE
+        text = phrase(pond, "plain")
+        self.assertEqual(text.count(self.SENTENCE), 1)                 # only the rainfall one
+        self.assertGreater(text.index(self.SENTENCE), text.index("Rainfall:"))
+
+    def test_not_added_when_slope_is_meaningful(self):
+        pond = load_pond()
+        pond["axes"][1]["result"]["trend"]["slope_per_year"] = 0.05
+        self.assertNotIn(self.SENTENCE, phrase(pond, "plain"))
+
+    def test_not_added_without_meaningful_value_or_sentence(self):
+        pond = load_pond()
+        del pond["axes"][1]["result"]["meaningful"]
+        self.assertNotIn(self.SENTENCE, phrase(pond, "plain"))
+        pond = load_pond()
+        pond["axes"][1]["result"]["verdict"]["summary"] = "A trend was detected in rainfall."
+        text = phrase(pond, "plain")
+        self.assertNotIn("smaller than", text)           # nothing is invented
+
+
+class SignificantFigureTests(unittest.TestCase):
+    def test_fmt_sig(self):
+        self.assertEqual(_fmt_sig(0.00448129), "0.00448")
+        self.assertEqual(_fmt_sig(-0.000312345), "-0.000312")
+        self.assertEqual(_fmt_sig(0.0125), "0.0125")
+        self.assertEqual(_fmt_sig(0.009996), "0.01")
+        self.assertEqual(_fmt_sig(123.456), "123")
+        self.assertEqual(_fmt_sig(0.0), "0")
+        self.assertEqual(_fmt_sig(5), "5")
+
+    def test_plain_and_detailed_use_three_figures_pro_keeps_full(self):
+        r = load_pond()
+        for lvl in ("plain", "detailed"):
+            with self.subTest(level=lvl):
+                text = phrase(r, lvl)
+                self.assertIn("slope 0.00448 K per year", text)
+                self.assertNotIn("0.00448129", text)
+        self.assertIn("slope 0.00448129 K per year", phrase(r, "pro"))
+
+    def test_guard_accepts_three_figure_form_and_still_rejects_wrong_numbers(self):
+        r = axis_result("air_temp")
+        self.assertTrue(check_text("No trend was found; slope 0.00448 K per year.", r).ok)
+        self.assertTrue(check_text("No trend was found; slope 0.00448129 K per year.", r).ok)
+        self.assertFalse(check_text("No trend was found; slope 0.0045 K per year.", r).ok)
+
+    def test_detected_headline_three_figures(self):
+        r = axis_result("air_temp")
+        r["verdict"].update(code="detected", label="Trend detected")
+        r["trend"]["slope_per_year"] = 0.031234567891234
+        self.assertIn("changes by 0.0312 K per year", phrase(r, "plain"))
+        self.assertIn("changes by 0.0312345679 K per year", phrase(r, "pro"))
+        for lvl in LEVELS:
+            self.assertTrue(check_text(phrase(r, lvl), r).ok)
 
 
 class RouterLabelTests(unittest.TestCase):
@@ -194,3 +303,5 @@ class RouterLabelTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
