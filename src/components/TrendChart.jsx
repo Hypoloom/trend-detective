@@ -1,7 +1,8 @@
 import React, { useRef } from 'react';
 import {
   ResponsiveContainer,
-  LineChart,
+  ComposedChart,
+  Area,
   Line,
   XAxis,
   YAxis,
@@ -32,7 +33,7 @@ function CustomTooltip({ active, payload, label, unit = "°C", secondaryUnit = "
         <div style={{ fontWeight: 700, color: 'var(--color-text-main)', marginBottom: '0.35rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.25rem' }}>
           Year {label}
         </div>
-        {payload.map((entry, index) => {
+        {payload.filter((entry) => entry.dataKey !== 'band').map((entry, index) => {
           const isSecondary = entry.dataKey === 'value2';
           const entryUnit = isSecondary ? (secondaryUnit || unit) : unit;
           return (
@@ -42,7 +43,7 @@ function CustomTooltip({ active, payload, label, unit = "°C", secondaryUnit = "
                 {entry.name}:
               </span>
               <span style={{ fontFamily: 'var(--font-mono)', fontWeight: 600, color: 'var(--color-text-main)' }}>
-                {entry.value !== undefined ? Number(entry.value).toFixed(2) : 'N/A'} {entryUnit}
+                {entry.value !== undefined ? Number(entry.value).toFixed(3) : 'N/A'} {entryUnit}
               </span>
             </div>
           );
@@ -73,7 +74,8 @@ export default function TrendChart({
   caption = "The line shows annual satellite readings. The dashed orange line is the Sen's slope trend.",
   isLoading = false,
   height = 340,
-  showDownloadButtons = true
+  showDownloadButtons = true,
+  simulated = false
 }) {
   const chartWrapperRef = useRef(null);
 
@@ -143,6 +145,7 @@ export default function TrendChart({
       year: item.year,
       value: item.value,
       trend: item.trend,
+      band: (item.low != null && item.high != null) ? [item.low, item.high] : undefined,
       value2: pt2 ? pt2.value : undefined,
       trend2: pt2 ? pt2.trend : undefined,
     };
@@ -188,7 +191,7 @@ export default function TrendChart({
       {/* Recharts Container */}
       <div ref={chartWrapperRef} style={{ width: '100%', height: `${height}px` }}>
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={mergedData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
+          <ComposedChart data={mergedData} margin={{ top: 10, right: 15, left: -10, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-border)" />
             <XAxis
               dataKey="year"
@@ -226,14 +229,25 @@ export default function TrendChart({
               align="right"
               wrapperStyle={{ paddingBottom: '10px', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}
             />
-
+            <Area
+              yAxisId="left"
+              type="monotone"
+              dataKey="band"
+              name="Uncertainty band"
+              stroke="none"
+              fill="var(--color-accent)"
+              fillOpacity={0.12}
+              legendType="none"
+              isAnimationActive={false}
+            />
             {/* Variable 1: Seasonal reading */}
             <Line
               yAxisId="left"
               type="monotone"
               dataKey="value"
-              name={variable1Name}
+              name={`${variable1Name}${simulated ? ' (simulated)' : ''}`}
               stroke="var(--color-text-main)"
+              strokeDasharray={simulated ? '6 4' : undefined}
               strokeWidth={2}
               dot={{ r: 2.5, fill: 'var(--color-text-main)', strokeWidth: 0 }}
               activeDot={{ r: 5, fill: 'var(--color-accent)' }}
@@ -264,7 +278,7 @@ export default function TrendChart({
                 dot={{ r: 2, fill: '#38BDF8' }}
               />
             )}
-          </LineChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 

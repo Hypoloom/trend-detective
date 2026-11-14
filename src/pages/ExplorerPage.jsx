@@ -21,6 +21,17 @@ const VERDICT_LABELS = {
   inconclusive: 'Inconclusive'
 };
 
+// Short wording for the stats card (detected is handled inside StatsCard, incl. the fragile case).
+const STAT_SUMMARY = {
+  no_trend: 'No trend was found. This is not proof that nothing is changing.',
+  data_limited: 'The record is too short or too noisy to confirm a trend.',
+  masked: 'Parts of the data may move in opposite directions and hide each other.',
+  inconclusive: 'The data cannot yet separate a trend from year-to-year noise.'
+};
+
+const DASH = '\u2013';
+const DOT = '\u00b7';
+
 function TinyRobot() {
   return (
     <svg width="15" height="15" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -161,17 +172,24 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
 
   const verdictCode = baseData1.verdict_code;
   const isSignificant = baseData1.verdict === 'significant';
-  const badgeLabel = isLive ? (VERDICT_LABELS[verdictCode] || 'Unknown') : (isSignificant ? 'Significant Trend' : 'Inconclusive Trend');
+  const isDetected = isLive ? verdictCode === 'detected' : isSignificant;
+  const badgeLabel = isLive
+    ? (VERDICT_LABELS[verdictCode] || 'Unknown')
+    : (isSignificant ? 'Significant Trend' : 'Inconclusive Trend');
+  const statSummary = isLive ? (STAT_SUMMARY[verdictCode] || '') : '';
+  const simulated = !isLive || Boolean(baseData1.simulated);
+
   const chartCaption = currentVar2
-    ? `Black line: ${currentVar1.name} (${currentVar1.unit}, left axis). Blue line: ${currentVar2.name} (${currentVar2.unit}, right axis). Orange dashed: trend line.`
+    ? `Black line: ${currentVar1.name} (${currentVar1.unit}, left axis). Blue line: ${currentVar2.name} (${currentVar2.unit}, right axis). Orange dashed: trend line of the first variable.`
     : isLive
-      ? (baseData1.caption || 'Annual means of the deseasonalized series. Orange dashed: Theil-Sen trend line.')
+      ? (baseData1.caption || 'Annual means of the deseasonalized series. Orange dashed: Theil-Sen trend line. Shaded: uncertainty band.')
       : `Black dots: annual observations. Orange dashed: Sen's slope trendline (${baseData1.slopePerYear} ${currentVar1.unit}/year).`;
 
+  const summaryPlain = baseData1.summary ? baseData1.summary.plain : '';
   const deepDivePayload = {
     id: `explorer-${selectedRegionId}-${selectedVar1Id}`,
     title: `${currentVar1.name} in ${currentRegion.name}`,
-    summary: baseData1.summary.plain,
+    summary: summaryPlain,
     deepDive: baseData1.summary,
     suggestedQuestions: [
       `Why is ${currentVar1.name} changing in ${currentRegion.name}?`,
@@ -194,7 +212,7 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
 
         {!isLive && (
           <div className="card" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
-            <strong>Simulated data.</strong> This region uses invented sample numbers for layout only. Pick a live region to see real results.
+            <AlertTriangle size={14} /> <strong>Simulated data.</strong> This region uses invented sample numbers for layout only. Pick a live region to see real results.
           </div>
         )}
         {error && (
@@ -248,7 +266,7 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
             <div>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
                 <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--color-text-light)', textTransform: 'uppercase' }}>
-                  Chart years: {startYear} – {endYear}
+                  Chart years: {startYear} {DASH} {endYear}
                 </span>
                 <span style={{ fontSize: '0.8rem', color: 'var(--color-accent)', fontWeight: 600 }}>
                   ({yearsInSlice} years)
@@ -282,7 +300,7 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
             <div>
               <span style={{ fontSize: '0.78rem', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--color-text-light)', fontWeight: 700 }}>
-                {currentRegion.name} · {startYear} to {endYear}
+                {currentRegion.name} {DOT} {startYear} to {endYear}
               </span>
               <h2 style={{ fontSize: '1.8rem', marginTop: '4px' }}>
                 {currentVar1.name} {currentVar2 ? `& ${currentVar2.name}` : 'Over Time'}
@@ -290,28 +308,35 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
-              <span className={`badge ${(isLive ? verdictCode === 'detected' : isSignificant) ? 'badge-significant' : 'badge-unclear'}`}>
-                {(isLive ? verdictCode === 'detected' : isSignificant)
-                  ? <CheckCircle2 size={13} />
-                  : <AlertTriangle size={13} />}
+              <span className={`badge ${isDetected ? 'badge-significant' : 'badge-unclear'}`}>
+                {isDetected ? <CheckCircle2 size={13} /> : <AlertTriangle size={13} />}
                 {' '}{badgeLabel}
               </span>
 
-              <button className="ask-about-pill" onClick={() => onOpenDeepDive(deepDivePayload)}>
-                <TinyRobot />
-                <span>Explain this chart</span>
-              </button>
+              {onOpenDeepDive && baseData1.summary && (
+                <button className="ask-about-pill" onClick={() => onOpenDeepDive(deepDivePayload)}>
+                  <TinyRobot />
+                  <span>Explain this chart</span>
+                </button>
+              )}
             </div>
           </div>
 
           <p style={{ fontSize: '1rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
             Source: <strong>{currentVar1.satellite}</strong> ({currentVar1.resolution}). {currentVar1.description}
+            {isLive && currentRegion.desc ? ` Region is a rough box: ${currentRegion.desc.toLowerCase()}.` : ''}
           </p>
 
           {isLive && baseData1.fragile && (
             <div className="card" style={{ padding: 'var(--space-3)', marginBottom: 'var(--space-3)' }}>
               <AlertTriangle size={14} /> <strong>Fragile result.</strong>{' '}
               {baseData1.fragileNote || 'This result depends on a few extreme years.'}
+            </div>
+          )}
+
+          {currentVar2 && (
+            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-2)' }}>
+              Two lines on one chart can move together without one causing the other. Statistics below are for the first variable only.
             </div>
           )}
 
@@ -325,6 +350,7 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
             isLoading={isChartLoading}
             height={380}
             caption={chartCaption}
+            simulated={simulated}
           />
 
           <StatsCard
@@ -335,11 +361,17 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
             ci95={baseData1.ci95}
             yearsUsed={isLive ? baseData1.yearsUsed : yearsInSlice}
             datasetName={currentVar1.satellite}
+            verdictLabel={isLive ? badgeLabel : ''}
+            plainSummary={statSummary}
+            fragile={isLive && Boolean(baseData1.fragile)}
+            unitNote={isLive ? "Values are anomalies: each calendar month's average is subtracted." : ''}
+            sourceLabel={isLive ? 'NASA MERRA-2 reanalysis (model product)' : ''}
+            recordLabel={isLive ? `1980${DASH}2025, full record` : ''}
             onOpenGlossary={openGlossary}
           />
 
-          {isLive && baseData1.summary && (
-            <p style={{ marginTop: 'var(--space-3)' }}>{baseData1.summary.plain}</p>
+          {isLive && summaryPlain && (
+            <p style={{ marginTop: 'var(--space-3)' }}>{summaryPlain}</p>
           )}
         </section>
 
