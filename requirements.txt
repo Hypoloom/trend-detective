@@ -1,8 +1,0 @@
-numpy
-pandas
-scipy
-earthaccess
-xarray
-h5netcdf
-pydap
-pydap
