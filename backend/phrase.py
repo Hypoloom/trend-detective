@@ -192,23 +192,71 @@ def _any_trend_reported(result):
                 and (r.get("verdict") or {}).get("code") == "detected":
             return True
     return False
-def _slopes(result):
-    """Every numeric value under a key containing 'slope' (keys with 'meaning' are skipped)."""
+def _num_or_none(x):
+    """A finite number, or None. Booleans and strings are not numbers."""
+    if isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x):
+        return None
+    return float(x)
+
+
+def reported_trends(result):
+    """One entry per place a trend can be reported: the top level (if it has a verdict) and every axis.
+
+    Each entry: axis (name or None for the top level), label, status, code (verdict code),
+    reported (True only for a detected trend; for the top level, the same rule as _trend_reported),
+    slope (ONLY trend.slope_per_year, never min_detectable_slope or any other key), fragile.
+    Axes that were not analyzed are listed too (code None, reported False) so a sentence about
+    them can be recognised and rejected.
+    """
+    out = []
+    top = result.get("verdict")
+    if isinstance(top, dict) and top.get("code"):
+        t = result.get("trend") or {}
+        out.append({"axis": None, "label": None, "status": "top", "code": top["code"],
+                    "reported": _trend_reported(result),
+                    "slope": _num_or_none(t.get("slope_per_year")),
+                    "fragile": t.get("fragile") is True})
+    for a in result.get("axes") or []:
+        if not isinstance(a, dict):
+            continue
+        r = a.get("result") if a.get("status") == "analyzed" else None
+        r = r if isinstance(r, dict) else {}
+        code = (r.get("verdict") or {}).get("code")
+        t = r.get("trend") or {}
+        out.append({"axis": a.get("name"), "label": a.get("label"), "status": a.get("status"),
+                    "code": code, "reported": code == "detected",
+                    "slope": _num_or_none(t.get("slope_per_year")),
+                    "fragile": t.get("fragile") is True})
+    return out
+
+
+def _axis_names(entry):
+    """Lower-case ways the writer can name an axis: its label and its name (underscores as spaces)."""
+    names = set()
+    for n in (entry.get("label"), entry.get("axis")):
+        if isinstance(n, str) and n.strip():
+            names.add(n.replace("_", " ").strip().lower())
+    return names
+
+
+def _axes_named_in(sentence, entries):
+    """The axis entries a sentence names. Longer names are matched first and blanked out, so
+    'temperature' does not also match inside 'air temperature'."""
+    s = sentence.lower()
+    pairs = sorted(((n, e) for e in entries if e["axis"] is not None for n in _axis_names(e)),
+                   key=lambda p: len(p[0]), reverse=True)
     found = []
-
-    def walk(x, key=""):
-        if isinstance(x, dict):
-            for k, v in x.items():
-                walk(v, str(k).lower())
-        elif isinstance(x, (list, tuple)):
-            for v in x:
-                walk(v, key)
-        elif ("slope" in key and "meaning" not in key and isinstance(x, (int, float))
-              and not isinstance(x, bool) and math.isfinite(x)):
-            found.append(float(x))
-
-    walk(result)
+    for n, e in pairs:
+        rx = re.compile(r"\b" + re.escape(n) + r"\b")
+        if rx.search(s):
+            s = rx.sub(" ", s)
+            if not any(e is f for f in found):
+                found.append(e)
     return found
+
+
+def _sentences(text):
+    return [p for p in re.split(r"(?<=[.!?])\s+|\n+", text) if p.strip()]
 
 
 def _first_unnegated(rx, text):
@@ -218,24 +266,75 @@ def _first_unnegated(rx, text):
     return None
 
 
+def _direction_problems(own, entries):
+    """Direction words, checked sentence by sentence (see reported_trends).
+
+    A sentence that names exactly one axis and has a direction word: that axis must be detected
+    and the word must match the sign of its own slope_per_year. A sentence naming several axes or
+    none: an 'up' word needs some detected axis with a positive slope, a 'down' word needs some
+    detected axis with a negative one. Negated words ('no upward trend') are ignored.
+    """
+    problems = []
+    reported = [e for e in entries if e["reported"]]
+    for sent in _sentences(own):
+        up, down = _first_unnegated(_UP, sent), _first_unnegated(_DOWN, sent)
+        if not (up or down):
+            continue
+        named = _axes_named_in(sent, entries)
+        if len(named) == 1:
+            e = named[0]
+            who = e["label"] or e["axis"]
+            if not e["reported"]:
+                problems.append(f"direction wording for {who!r}, which has no detected trend: "
+                                f"{(up or down).group(0)!r}")
+            elif up and down:
+                problems.append(f"both up and down wording for {who!r}: "
+                                f"{up.group(0)!r} / {down.group(0)!r}")
+            elif e["slope"] is None:
+                problems.append(f"direction wording for {who!r}, which has no slope to check: "
+                                f"{(up or down).group(0)!r}")
+            elif up and e["slope"] <= 0:
+                problems.append(f"direction wording contradicts the slope of {who!r}: {up.group(0)!r}")
+            elif down and e["slope"] >= 0:
+                problems.append(f"direction wording contradicts the slope of {who!r}: {down.group(0)!r}")
+            continue
+        for m, sign, other in ((up, 1, "negative"), (down, -1, "positive")):
+            if not m:
+                continue
+            if not reported:
+                problems.append(f"direction wording without a reported trend: {m.group(0)!r}")
+            elif not any(e["slope"] is not None and e["slope"] * sign > 0 for e in reported):
+                kind = "positive" if sign < 0 else "negative"
+                if any(e["slope"] is not None and e["slope"] * sign < 0 for e in reported):
+                    problems.append(f"direction wording contradicts a {kind} slope: {m.group(0)!r}")
+                else:
+                    problems.append(f"direction wording has no reported slope to support it: {m.group(0)!r}")
+    return problems
+
+
 def extra_problems(own, low, result, allowed):
-    """Number words, direction words, and association wording. `own` is the writer's own wording."""
+    """Number words, direction words, association wording, fragile wording.
+    `own` is the writer's own wording (engine copies removed); `low` is the whole text, lower case."""
     problems = []
     for word, v in number_words_in(own):
         if not any(math.isclose(v, a, rel_tol=1e-9, abs_tol=1e-12) for a in allowed):
             problems.append(f"invented number word: {word!r}")
-    up, down = _first_unnegated(_UP, own), _first_unnegated(_DOWN, own)
-    if up or down:
-        if not _trend_reported(result):
-            problems.append(f"direction wording without a reported trend: {(up or down).group(0)!r}")
-        else:
-            s = _slopes(result)
-            if s and all(x > 0 for x in s) and down and not up:
-                problems.append(f"direction wording contradicts a positive slope: {down.group(0)!r}")
-            if s and all(x < 0 for x in s) and up and not down:
-                problems.append(f"direction wording contradicts a negative slope: {up.group(0)!r}")
-    if _trend_reported(result) and (result.get("axes") or []) and not _ASSOC.search(low):
+    entries = reported_trends(result)
+    problems.extend(_direction_problems(own, entries))
+    # association wording: top-level verdict with axes (old rule), or the writer names a detected axis
+    # or says "slope". Engine-only text names nothing in `own`, so it is exempt.
+    need_assoc = _trend_reported(result) and bool(result.get("axes") or [])
+    if not need_assoc:
+        detected = [e for e in entries if e["axis"] is not None and e["reported"]]
+        if detected and (re.search(r"\bslope\b", own, re.I)
+                         or _axes_named_in(own, detected)):
+            need_assoc = True
+    if need_assoc and not _ASSOC.search(low):
         problems.append("trend reported without 'co-occurs with' or 'is associated with' wording")
+    # fragile axis named by the writer -> the text must say "extreme years"
+    fragile = [e for e in entries if e["axis"] is not None and e["fragile"]]
+    if fragile and _axes_named_in(own, fragile) and "extreme years" not in low:
+        problems.append("fragile trend named without saying it depends on a few extreme years")
     return problems
 
 def check_text(text, result):
@@ -579,21 +678,29 @@ class PhraseReport:
     note: str
 
 
+def _template_note(tmpl, result):
+    """'' if the template passes the guard; otherwise a note with the reasons (the template is still used)."""
+    g = check_text(tmpl, result)
+    return "" if g.ok else "; template failed guard: " + "; ".join(g.reasons)
+
+
 def phrase_with_report(result, level="plain", adapter=None):
     tmpl = template_phrase(result, level)
     if adapter is None:
-        return tmpl, PhraseReport("template", "LLM off")
+        return tmpl, PhraseReport("template", "LLM off" + _template_note(tmpl, result))
     user = json.dumps({"level": level, "result": result,
                        "llm_allowed_phrases": result.get("llm_allowed_phrases", [])},
                       ensure_ascii=False, default=str)
     try:
         raw = adapter.complete(SYSTEM_PROMPT, user)
     except Exception as e:  # any provider failure -> template
-        return tmpl, PhraseReport("template", f"adapter error: {type(e).__name__}")
+        return tmpl, PhraseReport("template",
+                                  f"adapter error: {type(e).__name__}" + _template_note(tmpl, result))
     g = check_text(raw if isinstance(raw, str) else "", result)
     if g.ok:
         return raw.strip(), PhraseReport("llm", "passed guard")
-    return tmpl, PhraseReport("template", "guard rejected: " + "; ".join(g.reasons))
+    return tmpl, PhraseReport("template",
+                              "guard rejected: " + "; ".join(g.reasons) + _template_note(tmpl, result))
 
 
 def phrase(result, level="plain", adapter=None):
