@@ -79,7 +79,8 @@ def allowed_numbers(obj):
             v = abs(float(x))
             out.append(v)
             if isinstance(x, float):
-                out.append(abs(float(_fmt(v))))   # rounded form, same rounding as the formatter
+                out.append(abs(float(_fmt(v))))       # rounded form, same rounding as the formatter
+                out.append(abs(float(_fmt_sig(v))))   # 3 significant figures, as shown in plain / detailed
         elif isinstance(x, str):
             out.extend(numbers_in_text(x))
         elif isinstance(x, dict):
@@ -183,6 +184,22 @@ def _fmt(v):
     return str(v)
 
 
+def _fmt_sig(v, sig=3):
+    """Round a float to `sig` significant figures (0.00448129 -> 0.00448). Other types go through _fmt."""
+    if not isinstance(v, float) or not math.isfinite(v) or v == 0 or v == int(v):
+        return _fmt(v)
+    digits = sig - 1 - math.floor(math.log10(abs(v)))
+    r = round(v, digits)
+    if digits <= 0:
+        return str(int(r))
+    return f"{r:.{digits}f}".rstrip("0").rstrip(".")
+
+
+def _slope(v, level):
+    """Slopes: 3 significant figures in plain and detailed, the full value in pro."""
+    return _fmt(v) if level == "pro" else _fmt_sig(v)
+
+
 def _sentence(s):
     """Make sure a piece of text ends with a full stop (or ! or ?)."""
     s = str(s).strip()
@@ -215,15 +232,40 @@ def _risk_window_text(rw, domain=None, level="plain"):
         parts.append("Window definition: " + _sentence(rw["definition"]))
     br = rw.get("base_rate")
     if isinstance(br, dict):
-        met, total, stmt = br.get("years_met"), br.get("years_total"), br.get("statement")
-        has_both = bool(stmt) and _fmt(met) in numbers_str(stmt) and _fmt(total) in numbers_str(stmt)
-        if met is not None and total is not None and not has_both:
-            parts.append(f"In {_fmt(met)} of the {_fmt(total)} years in the record, these months fit the window definition.")
-        if stmt:
-            parts.append(_sentence(stmt))
+        s = _base_rate_sentence(br)
+        if s:
+            parts.append(s)
     if rw.get("caveat"):
         parts.append(_sentence(rw["caveat"]))
     return " ".join(parts)
+
+
+_FRAGMENT_LEAD = re.compile(r"^years?\s+(?:in\s+which|when|where|that)\s+", re.I)
+
+
+def _base_rate_sentence(br):
+    """One sentence from years_met / years_total / statement.
+
+    The engine's statement is a fragment like "years in which these months averaged above the
+    record's own average." It is joined into: "In 12 of the last 20 years, these months averaged ...".
+    """
+    met, total = br.get("years_met"), br.get("years_total")
+    stmt = str(br.get("statement") or "").strip().rstrip(".!? ").strip()
+    have_counts = met is not None and total is not None
+    if stmt and have_counts:
+        m = _FRAGMENT_LEAD.match(stmt)
+        if m:
+            body = stmt[m.end():]
+        elif {_fmt(met), _fmt(total)} <= numbers_str(stmt):
+            return _sentence(_cap(stmt))          # the statement already carries both numbers
+        else:
+            body = stmt[:1].lower() + stmt[1:]
+        return _sentence(f"In {_fmt(met)} of the last {_fmt(total)} years, {body}")
+    if stmt:
+        return _sentence(_cap(stmt))
+    if have_counts:
+        return f"The window was met in {_fmt(met)} of the last {_fmt(total)} years."
+    return ""
 
 
 def numbers_str(text):
@@ -241,6 +283,26 @@ def _cap(s):
     return s[:1].upper() + s[1:]
 
 
+def _meaningful_note(r):
+    """For a 'detected' axis whose |slope| is below meaningful.value: the engine's own
+    'That is smaller than the X ... chosen as meaningful ...' sentence, copied from verdict.summary."""
+    v = r.get("verdict") or {}
+    if v.get("code") != "detected":
+        return ""
+    mean = r.get("meaningful")
+    mv = mean.get("value") if isinstance(mean, dict) else None
+    slope = (r.get("trend") or {}).get("slope_per_year")
+    nums = (int, float)
+    if isinstance(mv, bool) or isinstance(slope, bool) or not isinstance(mv, nums) or not isinstance(slope, nums):
+        return ""
+    if abs(slope) >= abs(mv):
+        return ""
+    for s in re.split(r"(?<=[.!?])\s+", str(v.get("summary") or "")):
+        if "smaller than" in s.lower() and "meaningful" in s.lower():
+            return _sentence(s)
+    return ""
+
+
 def _axis_lines(result, level):
     """One short report per analyzed axis: label, verdict label, slope + units (more at detailed / pro)."""
     out = []
@@ -254,13 +316,17 @@ def _axis_lines(result, level):
         label = _cap(a.get("label") or str(a.get("name", "?")).replace("_", " "))
         s = f"{label}: {v.get('label') or v.get('code') or 'no verdict'}"
         if t.get("slope_per_year") is not None:
-            s += f"; slope {_fmt(t['slope_per_year'])} {units} per year".replace("  ", " ")
+            s += f"; slope {_slope(t['slope_per_year'], level)} {units} per year".replace("  ", " ")
         line = _sentence(s)
         ci = t.get("slope_ci")
         if level != "plain" and isinstance(ci, (list, tuple)) and len(ci) == 2:
-            line += f" The range for the yearly change runs from {_fmt(ci[0])} to {_fmt(ci[1])} {units}.".replace("  ", " ")
+            line += (f" The range for the yearly change runs from {_slope(ci[0], level)} to "
+                     f"{_slope(ci[1], level)} {units}.").replace("  ", " ")
         if level == "pro" and t.get("p_value") is not None:
             line += f" p-value {_fmt(t['p_value'])}."
+        note = _meaningful_note(r)
+        if note:
+            line += " " + note
         out.append(line)
     return out
 
@@ -288,7 +354,7 @@ def template_phrase(result, level="plain"):
     head = []
     if code == "detected":
         if t.get("slope_per_year") is not None:
-            head.append(f"A trend was found in {where}: it changes by {_fmt(t['slope_per_year'])} "
+            head.append(f"A trend was found in {where}: it changes by {_slope(t['slope_per_year'], level)} "
                         f"{units} per year.".replace("  ", " "))
         else:
             head.append(f"A trend was found in {where}.")
@@ -339,10 +405,11 @@ def template_phrase(result, level="plain"):
 
     ci = t.get("slope_ci")
     if isinstance(ci, (list, tuple)) and len(ci) == 2:
-        lines.append(f"The range for the yearly change runs from {_fmt(ci[0])} to {_fmt(ci[1])} {units}.")
+        lines.append(f"The range for the yearly change runs from {_slope(ci[0], level)} to "
+                     f"{_slope(ci[1], level)} {units}.")
     if t.get("min_detectable_slope") is not None:
         lines.append(f"The smallest yearly change this record could reliably pick up is "
-                     f"{_fmt(t['min_detectable_slope'])} {units}.")
+                     f"{_slope(t['min_detectable_slope'], level)} {units}.")
     for c in result.get("caveats") or []:
         lines.append(_caveat_text(c))
     if result.get("axes"):
