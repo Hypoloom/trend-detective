@@ -856,10 +856,12 @@
    "June"
   ],
   "definition": "The 3 calendar months with the highest average air temperature in this record. This is a simple project choice, not a sourced rule.",
-  "base_rate": {
-   "years_met": 12,
-   "years_total": 20,
-   "statement": "years in which these months averaged above the record's own average"
+  "recent_vs_earlier": {
+   "recent_years": 20,
+   "earlier_years": 26,
+   "difference": 0.13039642611965974,
+   "direction": "higher",
+   "units": "K"
   },
   "caveat": "A window of months where conditions co-occur, not a prediction and not a number of days."
  },
@@ -883,7 +885,7 @@
   },
   {
    "id": "risk_window",
-   "text": "Risk window: April, May, June. In 12 of the last 20 years these months averaged above the record's own average. A window of months where conditions co-occur, not a prediction and not a number of days."
+   "text": "Risk window: April, May, June. In the last 20 years these months averaged 0.13 K higher than in the 26 years before. A window of months where conditions co-occur, not a prediction and not a number of days."
   },
   {
    "id": "tested",

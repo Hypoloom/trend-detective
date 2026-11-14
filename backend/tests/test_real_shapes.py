@@ -61,7 +61,7 @@ class RealPondTemplateTests(unittest.TestCase):
     def test_risk_window_sentence(self):
         text = phrase(load_pond(), "plain")
         self.assertIn("April, May and June", text)
-        self.assertIn("In 12 of the last 20 years, these months averaged above the record's own average.", text)
+        self.assertIn("In the last 20 years of the record these months averaged", text)
 
     def test_skips_not_analyzed_axes_in_axis_report(self):
         text = phrase(load_pond(), "plain")

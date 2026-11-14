@@ -17,7 +17,6 @@ def load_domain(domain_id, path="domains.json"):
                 return d
     raise KeyError(domain_id)
 
-
 def _risk_window(series_by_axis, rule, last_n=20):
     s = series_by_axis.get(rule["axis"]) if rule else None
     if s is None:
@@ -28,12 +27,15 @@ def _risk_window(series_by_axis, rule, last_n=20):
     months = sorted(int(m) for m in pick.index)
     sub = s[s.index.month.isin(months)]
     yearly = sub.groupby(sub.index.year).mean()
-    recent = yearly.iloc[-last_n:]
-    met = int((recent > float(yearly.mean())).sum())
+    rve = None
+    if len(yearly) >= last_n + 10:
+        recent, earlier = yearly.iloc[-last_n:], yearly.iloc[:-last_n]
+        d = float(recent.mean() - earlier.mean())
+        rve = {"recent_years": int(len(recent)), "earlier_years": int(len(earlier)),
+               "difference": abs(d), "direction": "higher" if d >= 0 else "lower",
+               "units": s.attrs.get("units", "")}
     return {"months": months, "month_names": [calendar.month_name[m] for m in months],
-            "definition": rule["definition"],
-            "base_rate": {"years_met": met, "years_total": int(len(recent)),
-                          "statement": "years in which these months averaged above the record's own average"},
+            "definition": rule["definition"], "recent_vs_earlier": rve,
             "caveat": "A window of months where conditions co-occur, not a prediction and not a number of days."}
 
 
@@ -56,6 +58,7 @@ def build(domain_id, region_label, box, start, end, user_inputs=None,
                 cfg = stream.VARIABLES[key]
                 s = stream.get_series(key, box, start, end, workers=workers)
                 series[ax["name"]] = s
+                s.attrs["units"] = cfg["units"]
                 m = resolve(key, s) if key in RULES else None
                 res = run_analysis(s, f"MERRA-2 {cfg['short_name']}", cfg["var"], cfg["units"],
                                    region_label,
@@ -84,10 +87,11 @@ def build(domain_id, region_label, box, start, end, user_inputs=None,
     if abstained:
         phrases.append({"id": "abstain", "text": reason})
     if rw:
+        rv = rw.get("recent_vs_earlier")
+        extra = (f" In the last {rv['recent_years']} years these months averaged {rv['difference']:.3g} "
+                 f"{rv['units']} {rv['direction']} than in the {rv['earlier_years']} years before.") if rv else ""
         phrases.append({"id": "risk_window",
-                        "text": f"Risk window: {', '.join(rw['month_names'])}. In "
-                                f"{rw['base_rate']['years_met']} of the last {rw['base_rate']['years_total']} "
-                                f"years these months averaged above the record's own average. {rw['caveat']}"})
+                        "text": f"Risk window: {', '.join(rw['month_names'])}.{extra} {rw['caveat']}"})
     phrases.append({"id": "tested", "text": f"{tested} data series were tested; results co-occur with each other "
                                             "and do not show cause."})
     caveats = ["Not finding a trend is not proof there isn't one.",
