@@ -293,7 +293,7 @@
     "verdict": {
      "code": "detected",
      "label": "Trend detected",
-     "summary": "A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0146587 mm/day per year chosen as meaningful for this variable."
+     "summary": "A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0147 mm/day per year chosen as meaningful for this variable."
     },
     "years": {
      "have": 45.9,
@@ -550,8 +550,262 @@
    "label": "Sunlight",
    "source": "nasa_data",
    "critical": false,
-   "status": "data_unavailable",
-   "result": null
+   "status": "analyzed",
+   "result": {
+    "verdict": {
+     "code": "detected",
+     "label": "Trend detected",
+     "summary": "A statistically significant downward trend of -0.315 W m-2 per year was found over 45.9 years of data. That is smaller than the 0.471 W m-2 per year chosen as meaningful for this variable."
+    },
+    "years": {
+     "have": 45.9,
+     "needed_low": 27.4,
+     "needed_mid": 30.0,
+     "needed_high": 33.4,
+     "needed_for_meaningful": 20.7,
+     "meaningful_slope": 0.4713693692000291
+    },
+    "trend": {
+     "slope_per_year": -0.31463293,
+     "slope_ci": [
+      -0.38769209,
+      -0.24026075
+     ],
+     "ols_slope_per_year": -0.26945285,
+     "p_value": 0.0,
+     "p_value_method": "Mann-Kendall (Kendall tau) on annual means",
+     "min_detectable_slope": 0.142296,
+     "units": "W m-2"
+    },
+    "noise": {
+     "sigma": 12.4407,
+     "lag1_autocorr": 0.075
+    },
+    "chart": {
+     "points": [
+      {
+       "year": 1980.5,
+       "value": 3.934004
+      },
+      {
+       "year": 1981.5,
+       "value": 2.900781
+      },
+      {
+       "year": 1982.5,
+       "value": -0.614529
+      },
+      {
+       "year": 1983.5,
+       "value": 3.355856
+      },
+      {
+       "year": 1984.5,
+       "value": 5.048484
+      },
+      {
+       "year": 1985.5,
+       "value": 5.481557
+      },
+      {
+       "year": 1986.5,
+       "value": 6.654959
+      },
+      {
+       "year": 1987.5,
+       "value": 0.55178
+      },
+      {
+       "year": 1988.5,
+       "value": 2.031767
+      },
+      {
+       "year": 1989.5,
+       "value": 5.980861
+      },
+      {
+       "year": 1990.5,
+       "value": 2.845356
+      },
+      {
+       "year": 1991.5,
+       "value": 2.534109
+      },
+      {
+       "year": 1992.5,
+       "value": 10.990171
+      },
+      {
+       "year": 1993.5,
+       "value": 6.412561
+      },
+      {
+       "year": 1994.5,
+       "value": 3.901061
+      },
+      {
+       "year": 1995.5,
+       "value": 2.217519
+      },
+      {
+       "year": 1996.5,
+       "value": 4.993256
+      },
+      {
+       "year": 1997.5,
+       "value": 4.239807
+      },
+      {
+       "year": 1998.5,
+       "value": 0.139365
+      },
+      {
+       "year": 1999.5,
+       "value": 3.348472
+      },
+      {
+       "year": 2000.5,
+       "value": 5.439977
+      },
+      {
+       "year": 2001.5,
+       "value": -0.663282
+      },
+      {
+       "year": 2002.5,
+       "value": 7.380246
+      },
+      {
+       "year": 2003.5,
+       "value": 0.435227
+      },
+      {
+       "year": 2004.5,
+       "value": -1.401523
+      },
+      {
+       "year": 2005.5,
+       "value": -5.793684
+      },
+      {
+       "year": 2006.5,
+       "value": -1.150343
+      },
+      {
+       "year": 2007.5,
+       "value": -4.960846
+      },
+      {
+       "year": 2008.5,
+       "value": -4.787272
+      },
+      {
+       "year": 2009.5,
+       "value": -2.755155
+      },
+      {
+       "year": 2010.5,
+       "value": -14.224012
+      },
+      {
+       "year": 2011.5,
+       "value": -1.29781
+      },
+      {
+       "year": 2012.5,
+       "value": -1.49516
+      },
+      {
+       "year": 2013.5,
+       "value": -7.107959
+      },
+      {
+       "year": 2014.5,
+       "value": -0.165651
+      },
+      {
+       "year": 2015.5,
+       "value": 1.446263
+      },
+      {
+       "year": 2016.5,
+       "value": 0.940008
+      },
+      {
+       "year": 2017.5,
+       "value": 4.671093
+      },
+      {
+       "year": 2018.5,
+       "value": 0.309364
+      },
+      {
+       "year": 2019.5,
+       "value": -3.455856
+      },
+      {
+       "year": 2020.5,
+       "value": -9.12853
+      },
+      {
+       "year": 2021.5,
+       "value": -14.820347
+      },
+      {
+       "year": 2022.5,
+       "value": -10.13329
+      },
+      {
+       "year": 2023.5,
+       "value": -1.488464
+      },
+      {
+       "year": 2024.5,
+       "value": -9.05853
+      },
+      {
+       "year": 2025.5,
+       "value": -3.681662
+      }
+     ],
+     "trend_line": [
+      {
+       "year": 1980.5,
+       "trend": 6.983563,
+       "low": 5.310189,
+       "high": 8.627394
+      },
+      {
+       "year": 2025.5,
+       "trend": -7.174919,
+       "low": -8.81875,
+       "high": -5.501545
+      }
+     ],
+     "seasonality_removed": true
+    },
+    "provenance": {
+     "dataset": "MERRA-2 M2TMNXRAD",
+     "variable": "SWGDN",
+     "region": "Maharashtra",
+     "start": "1980-01",
+     "end": "2025-12",
+     "simulated": false
+    },
+    "caveats": [
+     "Not finding a trend is not proof there isn't one.",
+     "Years-needed assumes the observed trend continues and the noise stays simple; read it as a range.",
+     "A trend is not a forecast.",
+     "'Meaningful' was set to 0.471369 W m-2 per year; the verdict depends on that choice."
+    ],
+    "tested_count": 1,
+    "meaningful": {
+     "rule": "2.0% of the mean per decade",
+     "basis": "2% of the long-term mean per decade; project choice, placeholder",
+     "value": 0.471369,
+     "sensitivity": []
+    }
+   }
   },
   {
    "name": "shade",
@@ -601,7 +855,7 @@
    "May",
    "June"
   ],
-  "definition": "STUB: the 3 calendar months with the highest average air temperature. Replace with a sourced rule.",
+  "definition": "The 3 calendar months with the highest average air temperature in this record. This is a simple project choice, not a sourced rule.",
   "base_rate": {
    "years_met": 12,
    "years_total": 20,
@@ -609,7 +863,7 @@
   },
   "caveat": "A window of months where conditions co-occur, not a prediction and not a number of days."
  },
- "tested_count": 2,
+ "tested_count": 3,
  "llm_allowed_phrases": [
   {
    "id": "axis:air_temp",
@@ -617,11 +871,11 @@
   },
   {
    "id": "axis:rainfall",
-   "text": "Rainfall: A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0146587 mm/day per year chosen as meaningful for this variable."
+   "text": "Rainfall: A statistically significant upward trend of 0.00633 mm/day per year was found over 45.9 years of data. That is smaller than the 0.0147 mm/day per year chosen as meaningful for this variable."
   },
   {
    "id": "axis:sunlight",
-   "text": "Sunlight: no data is available for this factor yet."
+   "text": "Sunlight: A statistically significant downward trend of -0.315 W m-2 per year was found over 45.9 years of data. That is smaller than the 0.471 W m-2 per year chosen as meaningful for this variable."
   },
   {
    "id": "abstain",
@@ -633,12 +887,12 @@
   },
   {
    "id": "tested",
-   "text": "2 data series were tested; results co-occur with each other and do not show cause."
+   "text": "3 data series were tested; results co-occur with each other and do not show cause."
   }
  ],
  "caveats": [
   "Not finding a trend is not proof there isn't one.",
   "A trend is not a forecast.",
-  "2 series were tested; some significant results can arise by chance."
+  "3 series were tested; some significant results can arise by chance."
  ]
 }

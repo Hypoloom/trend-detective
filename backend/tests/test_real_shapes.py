@@ -213,7 +213,7 @@ class BaseRateSentenceTests(unittest.TestCase):
 
 
 class MeaningfulSentenceTests(unittest.TestCase):
-    SENTENCE = "That is smaller than the 0.0146587 mm/day per year chosen as meaningful for this variable."
+    SENTENCE = "That is smaller than the 0.0147 mm/day per year chosen as meaningful for this variable."
 
     def test_rainfall_in_pond_gets_engine_sentence(self):
         r = load_pond()
@@ -248,7 +248,7 @@ class MeaningfulSentenceTests(unittest.TestCase):
         pond = load_pond()
         pond["axes"][1]["result"]["verdict"]["summary"] = "A trend was detected in rainfall."
         text = phrase(pond, "plain")
-        self.assertNotIn("smaller than", text)           # nothing is invented
+        self.assertNotIn("0.0147", text)           # nothing is invented for rainfall (sunlight's own sentence is fine)          # nothing is invented
 
 
 class SignificantFigureTests(unittest.TestCase):
