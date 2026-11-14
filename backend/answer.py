@@ -92,6 +92,10 @@ def build(domain_id, region_label, box, start, end, user_inputs=None,
                                             "and do not show cause."})
     caveats = ["Not finding a trend is not proof there isn't one.",
                "A trend is not a forecast."]
+
+    if abstained and rw is None:
+        phrases.append({"id": "no_risk_window",
+                        "text": "No risk window could be computed for this question yet, so no timing can be given."})
     if tested > 1:
         caveats.append(f"{tested} series were tested; some significant results can arise by chance.")
     return {"domain": dom["id"], "region": region_label, "axes": axes,
