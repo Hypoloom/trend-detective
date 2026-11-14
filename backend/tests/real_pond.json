@@ -16,9 +16,9 @@
     },
     "years": {
      "have": 45.9,
-     "needed_low": 71.2,
-     "needed_mid": 98.1,
-     "needed_high": 185.1,
+     "needed_low": 66.5,
+     "needed_mid": 107.2,
+     "needed_high": null,
      "needed_for_meaningful": 34.2,
      "meaningful_slope": 0.02
     },
@@ -299,9 +299,9 @@
     },
     "years": {
      "have": 45.9,
-     "needed_low": 39.0,
-     "needed_mid": 46.6,
-     "needed_high": 59.7,
+     "needed_low": 36.2,
+     "needed_mid": 45.7,
+     "needed_high": 65.4,
      "needed_for_meaningful": 48.4,
      "meaningful_slope": 0.014658711748443035
     },
@@ -563,9 +563,9 @@
     },
     "years": {
      "have": 45.9,
-     "needed_low": 27.4,
-     "needed_mid": 30.0,
-     "needed_high": 33.4,
+     "needed_low": 28.8,
+     "needed_mid": 32.6,
+     "needed_high": 38.0,
      "needed_for_meaningful": 20.7,
      "meaningful_slope": 0.4713693692000291
     },

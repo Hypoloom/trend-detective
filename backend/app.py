@@ -45,6 +45,9 @@ DATASETS = {
 
 REGIONS = {
     "maharashtra": {"label": "Maharashtra", "box": [72, 16, 80, 21]},
+    "rajasthan": {"label": "Rajasthan", "box": [69.5, 23.0, 78.0, 30.0]},
+    "kerala": {"label": "Kerala", "box": [74.8, 8.2, 77.5, 12.8]},
+    "gujarat": {"label": "Gujarat", "box": [68.0, 20.0, 74.5, 24.7]},
 }
 
 app = Flask(__name__)

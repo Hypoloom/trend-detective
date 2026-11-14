@@ -39,17 +39,17 @@ def _fit(s: pd.Series, deseason=True):
     return dict(
         years=float(t[-1] - t[0]), ols=float(ols.slope), ts=float(ts_slope),
         ts_ci=(float(ts_lo), float(ts_hi)), p_mk=float(mk.pvalue),
-        sigma=sigma, phi=phi, se=float(ols.stderr), p_drop3=p_drop3
+        sigma=sigma, phi=phi, se=float(ols.stderr), ts_se=float((ts_hi - ts_lo) / 3.92), p_drop3=p_drop3
     )
 
 
 def analyze(s: pd.Series, regions: dict | None = None, alpha=0.05, deseason=True,
             meaningful=None):
     f = _fit(s, deseason)
-    w = abs(f["ols"])
+    w = abs(f["ts"])
     n_mid = _need(f["sigma"], f["phi"], w)
-    n_low = _need(f["sigma"], f["phi"], w + f["se"])
-    n_high = _need(f["sigma"], f["phi"], w - f["se"])
+    n_low = _need(f["sigma"], f["phi"], w + f["ts_se"])
+    n_high = _need(f["sigma"], f["phi"], w - f["ts_se"])
 
     masked = False
     if regions:

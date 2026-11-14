@@ -277,7 +277,7 @@ class SignificantFigureTests(unittest.TestCase):
         self.assertTrue(check_text("No trend was found; slope 0.0036 K per year.", r).ok)
         self.assertTrue(check_text("No trend was found; slope 0.00359828 K per year.", r).ok)
         self.assertFalse(check_text("No trend was found; slope 0.0045 K per year.", r).ok)
-        
+
     def test_detected_headline_three_figures(self):
         r = axis_result("air_temp")
         r["verdict"].update(code="detected", label="Trend detected")
@@ -302,7 +302,13 @@ class RouterLabelTests(unittest.TestCase):
     def test_no_match_label(self):
         self.assertIn("no keyword", route("Best pizza recipe", domains=STUB_DOMAINS).reason)
 
-
+class YearsNeededNoneTests(unittest.TestCase):
+    def test_summary_with_unbounded_high(self):
+        from contract import _summary
+        text = _summary("data_limited", 0.01, "K", 46, 66.5, None)
+        self.assertIn("at least 66.5 years long", text)
+        self.assertNotIn("roughly", text)
+        
 if __name__ == "__main__":
     unittest.main()
 
