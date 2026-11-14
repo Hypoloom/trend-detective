@@ -20,6 +20,7 @@ import os
 import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, request
+from ui_adapter import bp as ui_bp
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -41,7 +42,7 @@ REGIONS = {
 }
 
 app = Flask(__name__)
-
+app.register_blueprint(ui_bp)
 
 # ---------------------------------------------------------------------------
 # 2. Small helpers
