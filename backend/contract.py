@@ -95,9 +95,9 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
         caveats.append(f"'Meaningful' was set to {meaningful:g} {units} per year; "
                        "the verdict depends on that choice.")
     
+    meaningful_block = None
     if n_tested > 1:
         caveats.append(f"{n_tested} series were tested; some significant results can arise by chance.")
-        meaningful_block = None
     if meaningful:
         sens = []
         if code != "detected":
