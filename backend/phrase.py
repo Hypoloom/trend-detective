@@ -142,6 +142,92 @@ class GuardResult:
     ok: bool
     reasons: list
 
+# ---------------- extra guard checks: number words, direction words, association wording ----------------
+_ONES = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
+         "eight": 8, "nine": 9}
+_TEENS = {"ten": 10, "eleven": 11, "twelve": 12, "thirteen": 13, "fourteen": 14,
+          "fifteen": 15, "sixteen": 16, "seventeen": 17, "eighteen": 18, "nineteen": 19}
+_TENS = {"twenty": 20, "thirty": 30, "forty": 40, "fifty": 50, "sixty": 60,
+         "seventy": 70, "eighty": 80, "ninety": 90}
+_BIG = {"zero": 0, "dozen": 12, "hundred": 100, "thousand": 1000, "million": 1000000}
+# "one" alone is left out on purpose ("no one", "one of the"), but "twenty-one" is caught.
+_STANDALONE = {**{k: v for k, v in _ONES.items() if k != "one"}, **_TEENS, **_BIG}
+_NUMWORD = re.compile(
+    r"\b(?:(" + "|".join(_TENS) + r")(?:[- ](" + "|".join(_ONES) + r"))?"
+    r"|(" + "|".join(_STANDALONE) + r"))\b", re.I)
+
+
+def number_words_in(text):
+    """(word, value) for each spelled-out number, e.g. ('twelve', 12) or ('twenty-five', 25)."""
+    out = []
+    for m in _NUMWORD.finditer(text):
+        if m.group(1):
+            v = _TENS[m.group(1).lower()] + (_ONES[m.group(2).lower()] if m.group(2) else 0)
+        else:
+            v = _STANDALONE[m.group(3).lower()]
+        out.append((m.group(0), v))
+    return out
+
+
+_UP = re.compile(r"\b(?:ris(?:e|es|en|ing)|rose|increas(?:e|es|ed|ing)|grow(?:s|n|ing)|grew|"
+                 r"climb(?:s|ed|ing)|warming|warmed|upward|upwards)\b", re.I)
+_DOWN = re.compile(r"\b(?:fall(?:s|en|ing)|fell|declin(?:e|es|ed|ing)|decreas(?:e|es|ed|ing)|"
+                   r"drop(?:s|ped|ping)?|shrink(?:s|ing)|shrank|cooling|cooled|downward|downwards)\b", re.I)
+_NEG = re.compile(r"\b(?:no|not|neither|nor|without|never|cannot)\b|n't\b", re.I)
+_ASSOC = re.compile(r"\b(?:co-?occurs?\s+with|(?:is|are)\s+associated\s+with|associated\s+with)\b", re.I)
+_NON_TREND_CODES = ("no_trend", "data_limited", "masked", "inconclusive")
+
+
+def _trend_reported(result):
+    code = _verdict_code(result)
+    return bool(code) and code not in _NON_TREND_CODES
+
+
+def _slopes(result):
+    """Every numeric value under a key containing 'slope' (keys with 'meaning' are skipped)."""
+    found = []
+
+    def walk(x, key=""):
+        if isinstance(x, dict):
+            for k, v in x.items():
+                walk(v, str(k).lower())
+        elif isinstance(x, (list, tuple)):
+            for v in x:
+                walk(v, key)
+        elif ("slope" in key and "meaning" not in key and isinstance(x, (int, float))
+              and not isinstance(x, bool) and math.isfinite(x)):
+            found.append(float(x))
+
+    walk(result)
+    return found
+
+
+def _first_unnegated(rx, text):
+    for m in rx.finditer(text):
+        if not _NEG.search(text[max(0, m.start() - 30):m.start()]):
+            return m
+    return None
+
+
+def extra_problems(own, low, result, allowed):
+    """Number words, direction words, and association wording. `own` is the writer's own wording."""
+    problems = []
+    for word, v in number_words_in(own):
+        if not any(math.isclose(v, a, rel_tol=1e-9, abs_tol=1e-12) for a in allowed):
+            problems.append(f"invented number word: {word!r}")
+    up, down = _first_unnegated(_UP, own), _first_unnegated(_DOWN, own)
+    if up or down:
+        if not _trend_reported(result):
+            problems.append(f"direction wording without a reported trend: {(up or down).group(0)!r}")
+        else:
+            s = _slopes(result)
+            if s and all(x > 0 for x in s) and down and not up:
+                problems.append(f"direction wording contradicts a positive slope: {down.group(0)!r}")
+            if s and all(x < 0 for x in s) and up and not down:
+                problems.append(f"direction wording contradicts a negative slope: {up.group(0)!r}")
+    if _trend_reported(result) and (result.get("axes") or []) and not _ASSOC.search(low):
+        problems.append("trend reported without 'co-occurs with' or 'is associated with' wording")
+    return problems
 
 def check_text(text, result):
     reasons = []
@@ -166,6 +252,7 @@ def check_text(text, result):
             reasons.append("abstention softened")
     if _verdict_code(result) == "no_trend" and not any(k in low for k in NO_TREND_MARKERS):
         reasons.append("'not found' wording missing for no_trend")
+    reasons.extend(extra_problems(own, low, result, allowed))
     return GuardResult(not reasons, reasons)
 
 
@@ -376,9 +463,12 @@ def template_phrase(result, level="plain"):
     # abstention block + risk window
     ab = []
     if abstain:
-        ab.append("This tool cannot give a definite answer here.")
-        if result.get("abstain_reason"):
-            ab.append(_sentence(result["abstain_reason"]))
+        reason = _sentence(result["abstain_reason"]) if result.get("abstain_reason") else ""
+        # the reason text may carry its own "Cannot give a number." -- merge, don't repeat
+        reason = re.sub(r"\s*cannot give a number\.?", "", reason, flags=re.IGNORECASE).strip()
+        ab.append("This tool cannot give a definite answer or a number here.")
+        if reason:
+            ab.append(reason)
     if result.get("risk_window"):
         rw = _risk_window_text(result["risk_window"], result.get("domain"), level).strip()
         if rw:
