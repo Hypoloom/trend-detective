@@ -9,3 +9,5 @@ year_cache/
 precip_*.csv
 t2m_fetched.csv
 t2m_test.csv
+stream_cache*/
+stream_cache*/
