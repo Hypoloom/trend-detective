@@ -440,7 +440,12 @@ def _axis_lines(result, level):
             line += (f" The range for the yearly change runs from {_slope(ci[0], level)} to "
                      f"{_slope(ci[1], level)} {units}.").replace("  ", " ")
         if level == "pro" and t.get("p_value") is not None:
-            line += f" p-value {_fmt(t['p_value'])}."
+            pv_text = f" p-value {_fmt(t['p_value'])}"
+            pwo = t.get("p_value_without_extreme_years")
+            if (t.get("fragile") is True and isinstance(pwo, (int, float))
+                    and not isinstance(pwo, bool) and math.isfinite(pwo)):
+                pv_text += f"; p-value without the most extreme years {_fmt(pwo)}"
+            line += pv_text + "."
         note = _meaningful_note(r)
         if note:
             line += " " + note

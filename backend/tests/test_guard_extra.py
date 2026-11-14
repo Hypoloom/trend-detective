@@ -132,3 +132,51 @@ def test_fragile_falls_back_when_summary_lacks_sentence():
     for level in ("plain", "detailed", "pro"):
         assert "depends on a few extreme years" in phrase.template_phrase(res, level), level
 
+        
+
+# ---- pro level: p-value without the most extreme years, only for fragile axes ----
+def _pro_axis_result(fragile, include_key=True, without=0.0842):
+    trend = {"slope_per_year": 0.016, "units": "mm/day", "p_value": 0.0166, "fragile": fragile}
+    if include_key:
+        trend["p_value_without_extreme_years"] = without
+    return {
+        "domain": "pond", "abstained": False,
+        "axes": [{"name": "rainfall", "label": "Rainfall", "status": "analyzed", "critical": False,
+                  "result": {"verdict": {"code": "detected", "label": "Trend detected",
+                                         "summary": "A statistically significant upward trend of 0.016 mm/day per year was found."},
+                             "trend": trend}}],
+    }
+
+
+PWO_TEXT = "p-value 0.0166; p-value without the most extreme years 0.0842."
+
+
+def test_pro_shows_p_value_without_extreme_years_when_fragile():
+    res = _pro_axis_result(True)
+    text = phrase.template_phrase(res, "pro")
+    assert PWO_TEXT in text
+    assert phrase.check_text(text, res).ok, phrase.check_text(text, res).reasons
+    for level in ("plain", "detailed"):
+        assert "without the most extreme years" not in phrase.template_phrase(res, level), level
+
+
+def test_pro_omits_it_when_not_fragile():
+    res = _pro_axis_result(False)
+    text = phrase.template_phrase(res, "pro")
+    assert "p-value 0.0166." in text
+    assert "without the most extreme years" not in text
+
+
+def test_pro_missing_key_does_not_crash():
+    res = _pro_axis_result(True, include_key=False)
+    text = phrase.template_phrase(res, "pro")
+    assert "p-value 0.0166." in text
+    assert "without the most extreme years" not in text
+
+
+def test_pro_uses_value_from_result_not_a_constant():
+    res = _pro_axis_result(True, without=0.0731)
+    text = phrase.template_phrase(res, "pro")
+    assert "p-value without the most extreme years 0.0731." in text
+    assert "0.0842" not in text
+
