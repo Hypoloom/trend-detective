@@ -237,11 +237,11 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
             </div>
 
             {/* Box 2 */}
-            <div className="card" style={{ padding: 'var(--space-4)', backgroundColor: '#F0F9FF', borderColor: '#BAE6FD' }}>
-              <span style={{ fontSize: '0.85rem', color: '#0369A1', fontWeight: 600 }}>
+            <div className="card" style={{ padding: 'var(--space-4)', backgroundColor: 'var(--color-accent-light)', border: '1px solid var(--color-accent)', boxShadow: 'var(--shadow-float)' }}>
+              <span style={{ fontSize: '0.85rem', color: 'var(--color-accent)', fontWeight: 600 }}>
                 Data we would need
               </span>
-              <h3 style={{ fontSize: '1.5rem', marginTop: '6px', color: '#0369A1' }}>
+              <h3 style={{ fontSize: '1.8rem', marginTop: '6px', color: 'var(--color-accent)' }}>
                 About 14 more years
               </h3>
               <p style={{ fontSize: '0.95rem' }}>
