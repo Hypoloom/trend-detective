@@ -1,0 +1,23 @@
+# Exported from Render on 2026-11-15T17:40:27Z
+version: "1"
+projects:
+- name: My project
+  environments:
+  - name: Production
+    services:
+    - type: web
+      name: hypoloom-backend
+      runtime: python
+      repo: https://github.com/Hypoloom/trend-detective
+      plan: free
+      envVars:
+      - key: PYTHON_VERSION
+        sync: false
+      region: singapore
+      buildCommand: pip install -r requirements.txt
+      startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --timeout 120 --workers
+        1
+      autoDeployTrigger: commit
+      rootDir: backend
+      previews:
+        generation: automatic
