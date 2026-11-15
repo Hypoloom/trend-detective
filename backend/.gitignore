@@ -13,3 +13,8 @@ stream_cache*/
 stream_cache*/
 
 .vscode/
+
+.env
+.env.*
+node_modules/
+*.pyc
