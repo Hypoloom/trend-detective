@@ -1,131 +1,91 @@
-# 🛰️ Hypoloom · Earth System Trend Detective
+# Hypoloom: Earth System Trend Detective
 
-> **NASA Space Apps Challenge:** *"Be An Earth System Trend Detective"*  
-> Decode decades of NASA satellite records into clear, honest trends that students and the general public can understand.
+Working name. Built for the NASA Space Apps 2026 challenge "Be An Earth System Trend Detective".
 
----
+Hypoloom lets people ask everyday questions about climate and weather records, finds trends in NASA MERRA-2 data, and tests whether those trends are statistically significant. Its main idea is honesty: when no trend can be found, it says **why** (a true null, too little data, or a method problem). When a question cannot be answered from data at all, it **abstains** instead of guessing.
 
-## ⚡ Quick Start: How to Run the App
+## What it does
 
-Open your terminal or command prompt inside the `hypoloom` folder and run:
+- **Chat** (robot panel): plain-language answers at three levels (Plain, Detailed, Pro), with a chart, the verdict, and the top caveats.
+- **Explorer**: pick a variable and a region, see the trend with its uncertainty band, and read a "Why this result" box.
+- **Verdicts** are rule-based and auditable: Detected, Data-limited, Masked by aggregation, No trend found (not proof of absence), Inconclusive.
+- **Abstention**: for questions such as "Why is my pond turning green?" the tool lists what it cannot know (nutrient load, existing algae) and gives a risk window, not a number of days.
+- **Answer types today**: pond, small oranges, apples and sweetness, cherry blossom timing, "is it getting hotter / wetter / sunnier", this year compared with the record, region comparison, season months (monsoon, pre-monsoon), day compared with night, and follow-up questions.
+- **Wording guard**: every answer text is checked against the computed numbers. It blocks invented numbers, causal wording ("because", "caused by"), and overclaims.
+- **No LLM is wired.** All text comes from fixed templates. The tool is designed to work with the LLM off.
 
-```bash
-# 1. Start the local development server
-npm run dev
-```
+## Data
 
-Then open **`http://localhost:5173`** in your browser.
+- NASA **MERRA-2** monthly reanalysis (a model product, not a direct measurement), 1980 to 2025.
+- Five variables: air temperature (T2M), rainfall (PRECTOTCORR), sunlight at the surface (SWGDN), night temperature (T2MMIN), day temperature (T2MMAX).
+- Four regions: Maharashtra, Rajasthan, Kerala, Gujarat (boxes for the last three are rough and not checked on a map).
+- The server serves **cached CSV files** (`backend/stream_cache/`, 20 files tracked in git). It never calls NASA while serving.
 
-To create a production build ready for deployment:
-```bash
-npm run build
-```
+## Run it locally
 
----
+Backend (terminal 1):
 
-## 🧭 What Was Updated (New Layout & AI Robot Assistant)
+    cd backend
+    python -m venv .venv
+    .venv\Scripts\activate
+    pip install -r requirements.txt
+    python app.py
 
-### 1. Clean, Uncrowded Layout (8px Spacing Scale)
-- **Full width of screen:** No static chat box permanently sitting on the page.
-- **One main idea per section:** Generous white space between sections (48px–80px gaps).
-- **Maximum 3 cards in a row:** Clean grid layouts with high readability.
-- **Larger body text:** 17–18px body font with line lengths kept under 68 characters.
-- **Progressive disclosure:** Complex stats (p-value, confidence interval, sensor info) sit behind a clean **"Show details"** toggle button. The plain result is shown first!
-- **Simple 4-item navigation:** **Home**, **Explorer**, **Data Gaps**, **Method**.
+Frontend (terminal 2, from the repo root):
 
-### 2. Draggable AI Robot Assistant
-- **Floating Robot Icon:** A friendly custom SVG robot floats in the bottom-right corner of **every page**.
-- **Gentle Hover Animation:** Smooth floating animation, disabled if the user has `prefers-reduced-motion` enabled.
-- **Draggable:** Drag with mouse or finger using pointer events.
-- **Smart Edge Snapping:** When released, snaps cleanly to the nearest screen edge or corner.
-- **Remembers Position:** Saves position in `localStorage` safely wrapped in `try/catch`.
-- **Accidental Drag Protection:** Dragging does NOT trigger the chat. Only an intentional click or tap opens the chat.
-- **Keyboard Alternative:** Use Arrow keys when the robot is focused to move it; click "Reset position" to snap back.
+    npm install
+    npm run dev
 
-### 3. Context-Aware Speech Bubble & Deep Dive
-- As you hover or scroll to different sections, the robot shows a speech bubble:
-  `"Want to know about [Section Title]?"`
-- Buttons:
-  - **`[Quick summary]`**: Gives a 2-sentence plain-language summary in the bubble.
-  - **`[Deep dive]`**: Slides open the chat panel, presents a progressive walk-down (**Plain** -> **Detailed** -> **Pro**), and provides 3 follow-up question chips.
-- Each chart and heading also has an **`Ask about this`** pill button that triggers the same deep dive.
+Open `http://localhost:5173`. The dev server proxies `/api` to `http://127.0.0.1:8000`. Restart the backend after editing `app.py`.
 
-### 4. Half-Screen Slide-Out Chat Panel
-- When the chat opens, it slides in on the **RIGHT HALF** of the screen (50% on desktop).
-- The page content smoothly moves into the **LEFT HALF** and reflows so nothing is cut off.
-- On mobile and tablet, the chat panel slides in full-screen with a friendly Back/Close button.
-- Pressing `Esc` or clicking `Close` closes the panel and returns focus to the robot.
+Production build: `npm run build`.
 
----
+## Test it
 
-## 📂 Project Structure & Key Files
+    pip install -r requirements-dev.txt
+    cd backend
+    python -m unittest discover -s tests -t .
+    cd ..
+    python -m pytest -q
 
-```text
-hypoloom/
-├── index.html                   # HTML template with Google Fonts (Fraunces & Plus Jakarta Sans)
-├── package.json                 # Project dependencies (React 18, Vite, Recharts, Lucide Icons)
-├── vite.config.js               # Fast development build settings
-└── src/
-    ├── main.jsx                 # React entry point
-    ├── App.jsx                  # Split layout (workspace + chat-panel) and section tracker
-    ├── index.css                # 8px spacing scale, full-width reflow layout, robot animations
-    │
-    ├── data/
-    │   └── mockData.js          # ⭐ SINGLE SOURCE OF TRUTH (datasets, PAGE_SECTIONS & getAnswer)
-    │
-    ├── components/
-    │   ├── Navbar.jsx           # Simplified 4-item navigation & glossary button
-    │   ├── Footer.jsx           # NASA Space Apps attribution & honesty statement
-    │   ├── FloatingRobot.jsx    # Draggable SVG robot assistant with speech bubble
-    │   ├── ChatPanel.jsx        # Half-screen slide-out chat with Plain/Detailed/Pro tabs
-    │   ├── StatsCard.jsx        # Stats card with "Show details" progressive disclosure toggle
-    │   ├── DataGapCard.jsx      # Unique Data Gap card: "What is missing and what would settle it?"
-    │   ├── TrendChart.jsx       # Recharts component (1 or 2 variables, CSV & PNG downloads)
-    │   └── GlossaryModal.jsx    # Pop-up dictionary for scientific terms
-    │
-    └── pages/
-        ├── Home.jsx             # Hero headline, Figure 1 live chart, 3-step How It Works, Data Gaps
-        ├── ExplorerPage.jsx     # Dropdown filters (1 or 2 variables), year-range slider, live chart
-        ├── DataGapsPage.jsx     # Matrix of unclear trends, reason badges & progress bars
-        └── MethodPage.jsx       # Plain-language guide to Mann-Kendall, Sen's slope & NASA sensors
-```
+Run **both**. They collect different files and count subtests differently. See `docs/TESTING.md`.
 
----
+## How it is deployed
 
-## 🛠️ Where to Customize
+Browser, then Vercel (static Vite build), then a rewrite of `/api/*` to a Render service running `gunicorn app:app`. The free Render instance sleeps when idle, so the first request after a pause can take 50+ seconds. Pushes to `main` redeploy both.
 
-### 1. Where to Edit Text & Section Information
-- **Page content & headlines:**
-  - Home: [`src/pages/Home.jsx`](file:///C:/Users/Ankit/.gemini/antigravity/scratch/hypoloom/src/pages/Home.jsx)
-  - Explorer: [`src/pages/ExplorerPage.jsx`](file:///C:/Users/Ankit/.gemini/antigravity/scratch/hypoloom/src/pages/ExplorerPage.jsx)
-  - Data Gaps: [`src/pages/DataGapsPage.jsx`](file:///C:/Users/Ankit/.gemini/antigravity/scratch/hypoloom/src/pages/DataGapsPage.jsx)
-  - Method: [`src/pages/MethodPage.jsx`](file:///C:/Users/Ankit/.gemini/antigravity/scratch/hypoloom/src/pages/MethodPage.jsx)
-- **Robot Section Knowledge:** Edit `PAGE_SECTIONS` in [`src/data/mockData.js`](file:///C:/Users/Ankit/.gemini/antigravity/scratch/hypoloom/src/data/mockData.js). Each section has `title`, `summary`, `deepDive`, and `suggestedQuestions`.
+## Repo layout
 
-### 2. Where to Change Colours & Theme
-All theme variables are at the top of [`src/index.css`](file:///C:/Users/Ankit/.gemini/antigravity/scratch/hypoloom/src/index.css):
-```css
-:root {
-  --color-accent: #C85A32;        /* NASA Terracotta orange */
-  --color-bg: #FFFFFF;            /* White page background */
-  --status-sig-bg: #DCFCE7;       /* Green for Significant */
-  --status-sig-text: #15803D;
-  --status-unclear-bg: #FEF3C7;   /* Amber for Not Yet Clear */
-  --status-unclear-text: #B45309;
-}
-```
+    backend/
+      app.py            Flask server and endpoints
+      engine.py         trend analysis (Theil-Sen, Mann-Kendall, years needed)
+      contract.py       turns engine output into JSON (verdict, why, caveats)
+      answer.py         builds an answer from a domain definition
+      domains.json      domains, axes, router keywords
+      router.py         rules-first question router
+      followup.py       follow-up question rules
+      phrase.py         template wording and the wording guard
+      yearrank.py, regioncompare.py, season.py, diurnal.py   extra answer types
+      meaningful.py     "meaningful size" placeholders
+      stream.py         fetch from NASA (only used to add data, never when serving)
+      ui_adapter.py     reshapes analysis for the Explorer
+      stream_cache/     20 cached CSV files
+      tests/            automated tests
+      API.md            endpoint reference
+    src/                React frontend (pages, components, api.js, askAdapter.js)
+    docs/               assessment, testing guide, test results
+    vercel.json         Vercel rewrites
 
-### 3. Where to Plug in Real Data (For Your Teammate)
-Your teammate only needs to replace `getAnswer(question, sectionContext)` in [`src/data/mockData.js`](file:///C:/Users/Ankit/.gemini/antigravity/scratch/hypoloom/src/data/mockData.js):
-```javascript
-export async function getAnswer(question, sectionContext) {
-  // Replace with real backend or NASA Earthdata API:
-  // const res = await fetch(`/api/query?q=${encodeURIComponent(question)}`);
-  // return await res.json();
-}
-```
+## Documentation
 
----
+- `backend/API.md`: every endpoint and response shape.
+- `docs/ASSESSMENT.md`: strengths and flaws, labelled as measured, from code, or inference.
+- `docs/TESTING.md`: how to test everything.
+- `docs/TEST_RESULTS.md`: every automated test with its recorded result, what was checked by hand, and what was not tested.
 
-## 🛡️ The Detective Honesty Rule
-The robot assistant is programmed to **only explain numbers that exist in the satellite data object**. It never hallucinates non-existent trends, speculates causes without data, or exaggerates certainty.
+## Honest limits
+
+- Verdicts depend on "meaningful size" thresholds that are project placeholders, not standards.
+- Not finding a trend is not proof that nothing is happening. A past trend is not a forecast.
+- All regions come from one reanalysis, so they are not independent confirmations.
+- Domain content is not yet backed by sourced studies; the tool says so instead of explaining causes.
