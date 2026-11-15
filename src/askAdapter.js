@@ -40,7 +40,7 @@ const TOPIC_LABELS = {
   citrus: 'Small oranges',
   heat: 'Is it getting hotter?',
   monsoon: 'Monsoon rainfall',
-  sunshine: 'Sunshine',
+  sunshine: 'Sunshine', apple: 'Apples and sweetness', cherry_blossom: 'Cherry blossom timing',
   year_vs_record: 'This year compared with the record',
   region_compare: 'Region comparison',
   season: 'Season trend',

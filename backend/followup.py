@@ -10,6 +10,8 @@ DOMAIN_AXES = {
     "heat": {"air_temp", "night_temp", "day_temp"},
     "monsoon": {"rainfall"},
     "sunshine": {"sunlight"},
+    "apple": {"air_temp", "rainfall", "sunlight"},
+    "cherry_blossom": {"air_temp", "rainfall", "sunlight"},
 }
 AXIS_DOMAIN = {"air_temp": "heat", "night_temp": "heat", "day_temp": "heat",
                "rainfall": "monsoon", "sunlight": "sunshine"}

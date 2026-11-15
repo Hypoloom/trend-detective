@@ -277,6 +277,37 @@
    "abstain_policy": "Report whether the records show a change. Do not say why."
   },
   {
+   "id": "apple",
+   "description": "Why apples are sweet or not sweet in a given year",
+   "example_questions": ["Why are apples so sweet this year?"],
+   "keywords": ["apple", "sweet", "sweeter", "sweetness", "sugar", "so sweet", "sweet apple"],
+   "axes": [
+    {"name": "air_temp", "label": "Air temperature", "source": "nasa_data", "critical": false, "variable": "t2m", "why_it_matters": "Checked from NASA data. Its effect on apples is not sourced here.", "evidence_status": "UNVERIFIED"},
+    {"name": "rainfall", "label": "Rainfall", "source": "nasa_data", "critical": false, "variable": "precip", "why_it_matters": "Checked from NASA data. Its effect on apples is not sourced here.", "evidence_status": "UNVERIFIED"},
+    {"name": "sunlight", "label": "Sunlight", "source": "nasa_data", "critical": false, "variable": "sunlight", "why_it_matters": "Checked from NASA data. Its effect on apples is not sourced here.", "evidence_status": "UNVERIFIED"},
+    {"name": "orchard_location", "label": "Whether your trees are in this region", "source": "not_knowable", "critical": true, "why_it_matters": "The loaded regions were not chosen for apples. The data describes the region, not your orchard.", "evidence_status": "UNVERIFIED"},
+    {"name": "variety", "label": "Apple variety", "source": "not_knowable", "critical": true, "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"},
+    {"name": "crop_load", "label": "Amount of fruit on the trees", "source": "not_knowable", "critical": true, "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"},
+    {"name": "harvest_timing", "label": "When the fruit was picked", "source": "not_knowable", "critical": true, "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"}
+   ],
+   "abstain_policy": "The data cannot say why apples taste sweet. Report climate trends only and abstain on the cause."
+  },
+  {
+   "id": "cherry_blossom",
+   "description": "Why cherry blossom blooms early or late",
+   "example_questions": ["Why is my cherry blossom blooming so late?"],
+   "keywords": ["cherry", "blossom", "blooming", "cherry blossom", "flowering"],
+   "axes": [
+    {"name": "air_temp", "label": "Air temperature", "source": "nasa_data", "critical": false, "variable": "t2m", "why_it_matters": "Checked from NASA data. Its effect on blooming is not sourced here.", "evidence_status": "UNVERIFIED"},
+    {"name": "rainfall", "label": "Rainfall", "source": "nasa_data", "critical": false, "variable": "precip", "why_it_matters": "Checked from NASA data. Its effect on blooming is not sourced here.", "evidence_status": "UNVERIFIED"},
+    {"name": "sunlight", "label": "Sunlight", "source": "nasa_data", "critical": false, "variable": "sunlight", "why_it_matters": "Checked from NASA data. Its effect on blooming is not sourced here.", "evidence_status": "UNVERIFIED"},
+    {"name": "tree_location", "label": "Whether your tree is in this region", "source": "not_knowable", "critical": true, "why_it_matters": "The loaded regions were not chosen for cherry trees. The data describes the region, not your tree.", "evidence_status": "UNVERIFIED"},
+    {"name": "tree_species", "label": "Tree species or variety", "source": "not_knowable", "critical": true, "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"},
+    {"name": "local_conditions", "label": "Conditions at the tree's exact spot", "source": "not_knowable", "critical": true, "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"}
+   ],
+   "abstain_policy": "The data cannot say why a tree blooms when it does. Report climate trends only and abstain on the cause."
+  },
+  {
    "id": "sunshine",
    "description": "Whether sunlight reaching the ground is rising or falling",
    "example_questions": [
