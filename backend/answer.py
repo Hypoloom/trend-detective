@@ -11,6 +11,10 @@ BLOCKING = {"needs_user", "not_knowable", "data_unavailable"}
 
 
 def load_domain(domain_id, path="domains.json"):
+    import os
+    # a relative path that is not found from the current folder is looked up next to this file
+    if not os.path.isabs(path) and not os.path.exists(path):
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), path)
     with open(path, encoding="utf-8") as f:
         for d in json.load(f)["domains"]:
             if d["id"] == domain_id:

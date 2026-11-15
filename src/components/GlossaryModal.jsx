@@ -27,7 +27,7 @@ export default function GlossaryModal({ isOpen, onClose, selectedTermKey = null 
             <div className="eyebrow" style={{ marginBottom: '0.25rem' }}>Plain-Language Guide</div>
             <h3 id="glossary-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <BookOpen size={20} color="var(--color-accent)" />
-              Satellite & Trend Glossary
+              Trend Glossary
             </h3>
             <p style={{ fontSize: '0.85rem', color: 'var(--color-text-light)' }}>
               Scientific ideas explained in simple words for students and the public.

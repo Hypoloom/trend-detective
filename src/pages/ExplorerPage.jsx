@@ -379,6 +379,8 @@ export default function ExplorerPage({ openGlossary, onUpdateRobotContext, onOpe
           <section className="section-gap">
             <DataGapCard
               gap={baseData1.gap}
+              why={baseData1.contract?.why}
+              units={baseData1.contract?.trend?.units}
               title={`What is missing: ${currentVar1.name} in ${currentRegion.name}`}
               onOpenGlossary={openGlossary}
             />

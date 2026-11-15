@@ -2,33 +2,37 @@
 app.py -- a small web server for the backend. Run it with:   python app.py
 
 It does NOT call NASA while a user clicks. It reads series that were fetched
-earlier (by fetch_opendap.py) from CSV files, then runs your friend's analysis.
+earlier from CSV files in stream_cache/, then runs the analysis. If a CSV is
+missing, the endpoint returns a clean JSON error (404) instead of fetching.
 
 Endpoints (the frontend calls these):
   GET /api/health
-  GET /api/datasets                                   what is available
+  GET /api/datasets                                   what is available (per region too)
   GET /api/series?dataset=T2M&region=maharashtra      monthly numbers (for a chart)
   GET /api/analysis?dataset=T2M&region=maharashtra&slope=0.02
                                                       the JSON from contract.run_analysis
+  GET /api/answer, GET|POST /api/ask                  see API.md
 
 Needs only:  pip install flask pandas numpy
 """
-import inspect
 import math
 import os
 
 import numpy as np
 import pandas as pd
 from flask import Flask, jsonify, request
+from werkzeug.exceptions import HTTPException
+
 from ui_adapter import bp as ui_bp
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+CACHE_DIR = os.path.join(HERE, "stream_cache")
 
 # ---------------------------------------------------------------------------
-# 1. What data exists. To add a variable: fetch it, then add one line here.
-#    "file" is the CSV that fetch_opendap.py saved (cache=... argument).
-#    "slope" is the "meaningful trend per year". PLACEHOLDER values: the team
-#    still has to decide them (0.02 K/yr for T2M is only a placeholder).
+# 1. What data exists. To add a variable: fetch it, then add one entry here.
+#    "file" is the Maharashtra cache file (kept for reference; readiness is
+#    checked for every region through cache_file()).
+#    "slope" is the "meaningful trend per year" override (None = use meaningful.py).
 # ---------------------------------------------------------------------------
 DATASETS = {
     "T2M": {"label": "Air temperature at 2 m", "units": "K", "stream_key": "t2m",
@@ -52,6 +56,11 @@ REGIONS = {
 
 app = Flask(__name__)
 app.register_blueprint(ui_bp)
+
+
+class CacheMissing(FileNotFoundError):
+    """The cached CSV for this variable and region is not on this machine."""
+
 
 # ---------------------------------------------------------------------------
 # 2. Small helpers
@@ -86,11 +95,53 @@ def clean(x):
 def error(message, code):
     return jsonify({"error": message}), code
 
+
+@app.errorhandler(Exception)
+def unexpected(e):
+    """Any unexpected failure becomes JSON, not an HTML page. HTTP errors pass through."""
+    if isinstance(e, HTTPException):
+        return e
+    return error(f"server error: {type(e).__name__}", 500)
+
+
+def cache_file(key, box):
+    """Name of the cached CSV for this stream key and box, or None.
+    Parses the numbers in each file name, so it does not depend on how they are formatted."""
+    if not os.path.isdir(CACHE_DIR):
+        return None
+    prefix = key + "_"
+    for name in sorted(os.listdir(CACHE_DIR)):
+        if not (name.startswith(prefix) and name.endswith(".csv")):
+            continue
+        try:
+            nums = [float(p) for p in name[len(prefix):-4].split("_")]
+        except ValueError:
+            continue                      # e.g. t2m_min_... when looking for t2m
+        if len(nums) == 4 and all(math.isclose(a, b, abs_tol=1e-9) for a, b in zip(nums, box)):
+            return name
+    return None
+
+
+def missing_cache(region, stream_keys):
+    """Stream keys that have no cached CSV for this region."""
+    box = tuple(REGIONS[region]["box"])
+    return [k for k in stream_keys if cache_file(k, box) is None]
+
+
+def cache_error(region, missing):
+    return error(f"cached data missing for {REGIONS[region]['label']}: {', '.join(missing)}. "
+                 f"Copy the CSV files into backend/stream_cache/ (the server does not fetch "
+                 f"from NASA while serving).", 404)
+
+
 def get_series(dataset, region):
-    """Monthly Series from the streaming cache (fetches from NASA if missing)."""
+    """Monthly Series from the cache. Raises CacheMissing if the CSV is not there."""
     import stream
-    return stream.get_series(DATASETS[dataset]["stream_key"], tuple(REGIONS[region]["box"]),
-                             1980, 2025, verbose=False)
+    key = DATASETS[dataset]["stream_key"]
+    box = tuple(REGIONS[region]["box"])
+    if cache_file(key, box) is None:
+        raise CacheMissing(f"no cached data for {key} in {REGIONS[region]['label']}")
+    return stream.get_series(key, box, 1980, 2025, verbose=False)
 
 
 def pick(args):
@@ -104,6 +155,7 @@ def pick(args):
         return None, None, error(f"unknown region '{region}'. "
                                  f"Choose one of {list(REGIONS)}", 400)
     return dataset, region, None
+
 
 def call_run_analysis(series, dataset, region, slope):
     import stream
@@ -121,6 +173,13 @@ def call_run_analysis(series, dataset, region, slope):
                         meaningful=slope, meaningful_rule=rule)
 
 
+def nasa_keys(dom):
+    """Stream keys a domain needs from NASA data (only keys stream.py knows)."""
+    import stream
+    return [a["variable"] for a in dom.get("axes", [])
+            if a.get("source") == "nasa_data" and a.get("variable") in stream.VARIABLES]
+
+
 # ---------------------------------------------------------------------------
 # 3. The endpoints
 # ---------------------------------------------------------------------------
@@ -133,12 +192,15 @@ def health():
 def datasets():
     out = []
     for key, info in DATASETS.items():
+        ready_regions = {rid: cache_file(info["stream_key"], tuple(r["box"])) is not None
+                         for rid, r in REGIONS.items()}
         out.append({
             "id": key,
             "label": info["label"],
             "units": info["units"],
             "default_slope": info["slope"],
-            "ready": os.path.exists(os.path.join(HERE, info["file"])),
+            "ready": all(ready_regions.values()),
+            "ready_regions": ready_regions,
         })
     regions = [{"id": k, "label": v["label"], "box": v["box"]}
                for k, v in REGIONS.items()]
@@ -161,6 +223,7 @@ def series():
         "dates": [d.strftime("%Y-%m") for d in s.index],
         "values": s.values,
     }))
+
 
 @app.get("/api/analysis")
 def analysis():
@@ -189,10 +252,21 @@ def answer_endpoint():
     region = request.args.get("region", "maharashtra")
     if region not in REGIONS:
         return error(f"unknown region '{region}'. Choose one of {list(REGIONS)}", 400)
+    domain = request.args.get("domain", "pond")
+    try:
+        dom = answer.load_domain(domain)
+    except (KeyError, ValueError):
+        return error(f"unknown domain '{domain}'", 400)
+    missing = missing_cache(region, nasa_keys(dom))
+    if missing:
+        return cache_error(region, missing)
     box = tuple(REGIONS[region]["box"])
-    out = answer.build(request.args.get("domain", "pond"),
-                       f"{REGIONS[region]['label']} box {box}", box, 1980, 2025)
+    try:
+        out = answer.build(domain, f"{REGIONS[region]['label']} box {box}", box, 1980, 2025)
+    except FileNotFoundError as e:
+        return error(str(e), 404)
     return jsonify(clean(out))
+
 
 @app.route("/api/ask", methods=["GET", "POST"])
 def ask_endpoint():
@@ -236,7 +310,13 @@ def ask_endpoint():
     if "region" in allowed:
         inputs.setdefault("region", label)
 
-    out = answer.build(r.domain, label, box, 1980, 2025, user_inputs=inputs)
+    missing = missing_cache(region, nasa_keys(dom))
+    if missing:
+        return cache_error(region, missing)
+    try:
+        out = answer.build(r.domain, label, box, 1980, 2025, user_inputs=inputs)
+    except FileNotFoundError as e:
+        return error(str(e), 404)
     text, rep = phrase.phrase_with_report(out, level)
     return jsonify(clean({"fallback": False, "domain": r.domain, "confidence": r.confidence,
                           "route_source": r.source, "level": level, "text": text,

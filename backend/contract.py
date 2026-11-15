@@ -21,7 +21,8 @@ def _f(x, nd=6):
     return round(float(x), nd)
 
 
-def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=None, fragile=False):
+def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=None, fragile=False,
+             ci=None, sens=None):
     direction = "upward" if slope > 0 else "downward"
     if code == "detected":
         text = (f"A statistically significant {direction} trend of {slope:.3g} {units} "
@@ -52,15 +53,45 @@ def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=Non
         return ("Different regions show opposite significant trends, so the combined "
                 "series hides them.")
     if code == "no_trend":
-        text = ("No trend was found even with a long record. "
+        text = (f"No trend was found over {years} years of data. "
                 "That is not proof that nothing is happening.")
+        have_ci = ci is not None and ci[0] is not None and ci[1] is not None
+        if have_ci:
+            text += (f" The estimated change is {slope:.3g} {units} per year "
+                     f"(95% range {ci[0]:.3g} to {ci[1]:.3g}).")
+            if meaningful:
+                if max(abs(ci[0]), abs(ci[1])) < meaningful:
+                    text += (f" That whole range is smaller than the {meaningful:.3g} {units} per year "
+                             "chosen as meaningful, so a change of that size is unlikely in this record.")
+                else:
+                    text += (f" That range reaches the {meaningful:.3g} {units} per year chosen as "
+                             "meaningful, so a change of that size cannot be ruled out.")
         if md is not None:
             text += (f" A trend larger than about {md:.2g} {units} per year "
                      "would probably have been detected.")
+        for e in (sens or []):
+            if e.get("factor") == 0.5 and e.get("verdict_code") == "data_limited":
+                text += (f" If 'meaningful' were set to half that size ({e['value']:.3g} {units} per year), "
+                         "this record would be too short to tell.")
         return text
     return ("The evidence is mixed: the trend is not significant, and the record "
             "is not clearly too short.")
 
+def _why(code, years, nm, meaningful, md, ci, sens):
+    """Structured reason for a non-detected result. Every value comes from the engine; no new numbers."""
+    if code == "detected":
+        return None
+    lo, hi = (ci if ci is not None else (None, None))
+    finite = lo is not None and hi is not None and np.isfinite(lo) and np.isfinite(hi)
+    cls = code
+    if code == "no_trend" and meaningful and finite:
+        cls = ("no_trend_below_meaningful" if max(abs(lo), abs(hi)) < meaningful
+               else "no_trend_reaches_meaningful")
+    codes = {e.get("verdict_code") for e in (sens or [])}
+    return {"class": cls, "years_have": years, "years_needed_for_meaningful": nm,
+            "meaningful_value": meaningful, "min_detectable_slope": md,
+            "slope_ci": [_f(lo, 8), _f(hi, 8)] if finite else None,
+            "threshold_sensitive": (len(codes) > 1) if codes else None}
 
 def run_analysis(s, dataset, variable, units, region, regions=None,
                  deseason=True, simulated=False, meaningful=None, meaningful_rule=None):
@@ -102,6 +133,7 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
                        "the verdict depends on that choice.")
     
     meaningful_block = None
+    sens = []
     if n_tested > 1:
         caveats.append(f"{n_tested} series were tested; some significant results can arise by chance.")
     if meaningful:
@@ -117,7 +149,8 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
     return {
         "verdict": {"code": code, "label": label,
                     "summary": _summary(code, r["ts"], units, r["years_have"], lo, hi,
-                                        nm=nm, meaningful=meaningful, md=md, fragile=fragile)},
+                                        nm=nm, meaningful=meaningful, md=md, fragile=fragile,
+                                        ci=(ts_lo, ts_hi), sens=sens)},
         "years": {"have": r["years_have"], "needed_low": lo, "needed_mid": mid,
                   "needed_high": hi, "needed_for_meaningful": nm,
                   "meaningful_slope": meaningful},
@@ -133,6 +166,7 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
         "caveats": caveats,
         "tested_count": n_tested,
         "meaningful": meaningful_block,
+        "why": _why(code, r["years_have"], nm, meaningful, md, (ts_lo, ts_hi), sens),
     }
 
 

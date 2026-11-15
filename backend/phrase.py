@@ -11,6 +11,7 @@ import re
 from dataclasses import dataclass
 
 LEVELS = ("plain", "detailed", "pro")
+_APOS = "\u2019"   # typographic apostrophe, normalised to "'" before checking
 
 
 # ---------------- adapter layer (no provider chosen yet) ----------------
@@ -112,13 +113,16 @@ def engine_strings(result):
     return sorted(found, key=len, reverse=True)
 
 
-def own_wording(text, result):
-    """The text with everything copied verbatim from the engine removed: only the writer's own words stay."""
-    t = text.replace("’", "'")
+def own_wording(text, result, keep=()):
+    """The text with everything copied verbatim from the engine removed: only the writer's own words stay.
+    Strings in `keep` (for example axis labels) are not removed."""
+    keep = {str(k).strip().lower() for k in keep}
+    t = text.replace(_APOS, "'")
     for s in engine_strings(result):
-        t = re.sub(re.escape(s.replace("’", "'")), " ", t, flags=re.I)
+        if s.lower() in keep:
+            continue
+        t = re.sub(re.escape(s.replace(_APOS, "'")), " ", t, flags=re.I)
     return t
-
 
 def must_abstain(result):
     if result.get("abstained") is True:
@@ -141,6 +145,7 @@ def needs_evidence_notice(result):
 class GuardResult:
     ok: bool
     reasons: list
+
 
 # ---------------- extra guard checks: number words, direction words, association wording ----------------
 _ONES = {"one": 1, "two": 2, "three": 3, "four": 4, "five": 5, "six": 6, "seven": 7,
@@ -182,6 +187,7 @@ def _trend_reported(result):
     code = _verdict_code(result)
     return bool(code) and code not in _NON_TREND_CODES
 
+
 def _any_trend_reported(result):
     """True if the top-level verdict or any analyzed axis reports a detected trend."""
     if _verdict_code(result) == "detected":
@@ -192,6 +198,8 @@ def _any_trend_reported(result):
                 and (r.get("verdict") or {}).get("code") == "detected":
             return True
     return False
+
+
 def _num_or_none(x):
     """A finite number, or None. Booleans and strings are not numbers."""
     if isinstance(x, bool) or not isinstance(x, (int, float)) or not math.isfinite(x):
@@ -312,6 +320,40 @@ def _direction_problems(own, entries):
     return problems
 
 
+_HEDGES = ("not proof", "does not mean", "cannot rule out", "can't rule out")
+_NO_CHANGE = re.compile(
+    r"\b(?:no (?:real )?(?:change|effect|difference|impact)|unchanged|did(?: not|n't) change|"
+    r"(?:has|have) not changed|not changed|stable|steady|flat|stayed the same|"
+    r"(?:has|have) no trend)\b", re.I)
+_FOUND = re.compile(
+    r"\b(?:found a trend|shows? a trend|significant(?:ly)?|detected|confirmed|confirms?)\b", re.I)
+_LIMITED_MARKERS = ABSTAIN_MARKERS + ("evidence is limited", "too short", "not enough",
+                                      "may be hidden", "inconclusive")
+
+
+def _non_trend_problems(own, low, entries):
+    """Axes with no_trend / data_limited / masked / inconclusive must not be described as a finding
+    or as proof of 'no change'; a text containing a limited axis needs a limited-evidence marker."""
+    problems = []
+    axes = [e for e in entries if e["axis"] is not None and e["code"] in _NON_TREND_CODES]
+    if not axes:
+        return problems
+    hedged = any(h in low for h in _HEDGES)
+    for sent in _sentences(own):
+        for e in _axes_named_in(sent, axes):
+            who = e["label"] or e["axis"]
+            if e["code"] == "no_trend":
+                m = _NO_CHANGE.search(sent)
+                if m and not hedged:
+                    problems.append(f"no-change wording for {who!r} without a hedge: {m.group(0)!r}")
+            else:
+                m = _FOUND.search(sent)
+                if m:
+                    problems.append(f"found-trend wording for limited axis {who!r}: {m.group(0)!r}")
+    if any(e["code"] != "no_trend" for e in axes) and not any(k in low for k in _LIMITED_MARKERS):
+        problems.append("limited-evidence marker missing for a data_limited/masked/inconclusive axis")
+    return problems
+
 def extra_problems(own, low, result, allowed):
     """Number words, direction words, association wording, fragile wording.
     `own` is the writer's own wording (engine copies removed); `low` is the whole text, lower case."""
@@ -321,6 +363,8 @@ def extra_problems(own, low, result, allowed):
             problems.append(f"invented number word: {word!r}")
     entries = reported_trends(result)
     problems.extend(_direction_problems(own, entries))
+    labels = [e["label"] for e in entries if isinstance(e.get("label"), str)]
+    problems.extend(_non_trend_problems(own_wording(low, result, keep=labels), low, entries))
     # association wording: top-level verdict with axes (old rule), or the writer names a detected axis
     # or says "slope". Engine-only text names nothing in `own`, so it is exempt.
     need_assoc = _trend_reported(result) and bool(result.get("axes") or [])
@@ -337,11 +381,12 @@ def extra_problems(own, low, result, allowed):
         problems.append("fragile trend named without saying it depends on a few extreme years")
     return problems
 
+
 def check_text(text, result):
     reasons = []
     if not text or not text.strip():
         return GuardResult(False, ["empty text"])
-    low = text.lower().replace("’", "'")
+    low = text.lower().replace(_APOS, "'")
     allowed = allowed_numbers(result)
     for n in numbers_in_text(text):
         if not any(math.isclose(n, a, rel_tol=1e-9, abs_tol=1e-12) for a in allowed):
@@ -503,6 +548,7 @@ def _meaningful_note(r):
             return _sentence(s)
     return ""
 
+
 _FRAGILE_FALLBACK = ("This result depends on a few extreme years: it is not significant "
                      "when the most extreme years are left out.")
 
@@ -519,6 +565,33 @@ def _fragile_note(r):
         if "extreme years" in s.lower():
             return _sentence(s)
     return _FRAGILE_FALLBACK
+
+
+def _no_trend_note(r, level):
+    """Engine sentences explaining a no_trend result, copied from verdict.summary (no new wording).
+    Plain gets the 95% range sentence too; detailed and pro already print the range themselves."""
+    v = r.get("verdict") or {}
+    if v.get("code") != "no_trend":
+        return ""
+    keys = ["chosen as meaningful", "too short to tell"]
+    if level == "plain":
+        keys.insert(0, "95% range")
+    out = []
+    for s in re.split(r"(?<=[.!?])\s+", str(v.get("summary") or "")):
+        if any(k in s.lower() for k in keys):
+            out.append(_sentence(s))
+    return " ".join(out)
+
+def _limited_note(r):
+    code = (r.get("verdict") or {}).get("code")
+    if code == "data_limited":
+        return "Evidence is limited: there is not enough data yet to say anything firm."
+    if code == "masked":
+        return "Evidence is limited: a trend may be hidden, so this tool cannot say either way."
+    if code == "inconclusive":
+        return "Evidence is limited: there is not enough evidence to say."
+    return ""
+
 def _axis_lines(result, level):
     """One short report per analyzed axis: label, verdict label, slope + units (more at detailed / pro)."""
     out = []
@@ -548,9 +621,15 @@ def _axis_lines(result, level):
         note = _meaningful_note(r)
         if note:
             line += " " + note
+        nt = _no_trend_note(r, level)
+        if nt:
+            line += " " + nt
         fragile = _fragile_note(r)
         if fragile:
             line += " " + fragile
+        lim = _limited_note(r)
+        if lim:
+            line += " " + lim
         out.append(line)
     return out
 

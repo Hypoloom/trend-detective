@@ -81,7 +81,7 @@ export default function DataGapsPage({ openGlossary, onOpenDeepDive }) {
                 Even if there is a real shift underneath, 30 years isn't long enough to separate the signal from natural weather noise.
               </p>
               <div style={{ marginTop: 'var(--space-2)', fontSize: '0.85rem', color: 'var(--color-accent)', fontWeight: 600 }}>
-                Solution: Continue satellite observations for ~10–15 more years.
+                Solution: Keep collecting observations until the record is long enough.
               </div>
             </div>
 
@@ -92,7 +92,7 @@ export default function DataGapsPage({ openGlossary, onOpenDeepDive }) {
                 <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Method / Resolution Limit</h3>
               </div>
               <p style={{ fontSize: '0.95rem' }}>
-                The satellite camera's pixels are too large or it flies over too infrequently.
+                The data's grid cells are too large, or the record is too coarse in time.
                 For example, 250m MODIS pixels blur out narrow irrigation green belts amidst sand dunes.
               </p>
               <div style={{ marginTop: 'var(--space-2)', fontSize: '0.85rem', color: 'var(--color-text-main)', fontWeight: 600 }}>
@@ -107,11 +107,11 @@ export default function DataGapsPage({ openGlossary, onOpenDeepDive }) {
                 <h3 style={{ fontSize: '1.25rem', margin: 0 }}>Probably No Real Change</h3>
               </div>
               <p style={{ fontSize: '0.95rem' }}>
-                The Earth system in this region is in stable equilibrium. We have plenty of high-quality data,
-                and the slope is near zero.
+                We have a long record and the slope is close to zero.
+                That is not proof that nothing is changing: it means any change is smaller than this record can reliably detect.
               </p>
               <div style={{ marginTop: 'var(--space-2)', fontSize: '0.85rem', color: 'var(--status-sig-text)', fontWeight: 600 }}>
-                Solution: No extra data needed; the status quo is statistically verified.
+                Solution: A longer record or a finer view could still find a small change.
               </div>
             </div>
           </div>
@@ -126,7 +126,7 @@ export default function DataGapsPage({ openGlossary, onOpenDeepDive }) {
                   Earth System Data Gap Matrix
                 </h2>
                 <p style={{ fontSize: '0.95rem', color: 'var(--color-text-light)', margin: 0 }}>
-                  Live evaluation of observational limits across NASA satellite time series.
+                  Example table (simulated data): it shows the kinds of limits a record can have. These rows are not measured results.
                 </p>
               </div>
 
@@ -231,14 +231,14 @@ export default function DataGapsPage({ openGlossary, onOpenDeepDive }) {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-2)' }}>
             <div>
               <div className="eyebrow">Spotlight Case Study</div>
-              <h2>Why can't we say if Jaipur's rainfall is declining?</h2>
+              <h2>Example (simulated data): why can't we say if rainfall is declining?</h2>
             </div>
             <button
               className="ask-about-pill"
               onClick={() => onOpenDeepDive(PAGE_SECTIONS['data-gaps-matrix'])}
             >
               <TinyRobot />
-              <span>Ask about Jaipur rain</span>
+              <span>Ask about this example</span>
             </button>
           </div>
 
@@ -247,9 +247,9 @@ export default function DataGapsPage({ openGlossary, onOpenDeepDive }) {
               reason: "Not enough data yet",
               yearsHave: 36,
               yearsNeed: 50,
-              tip: "Jaipur's annual monsoon swings between 380 mm and 780 mm due to El Niño and Indian Ocean Dipole phenomena. Because this ±200 mm noise is 100 times larger than the estimated -2 mm/year slope, we need roughly 14 more years of GPM satellite radar passes to confirm whether climate change is shrinking Rajasthan's monsoon."
+              tip: "Simulated example: in this made-up case the natural year-to-year swings are much larger than the slope, so many more years of records would be needed before a trend could be separated from natural variability. This is not a result for any real region."
             }}
-            title="Statistical Power Analysis: Jaipur Annual Precipitation"
+            title="Example (simulated data): statistical power analysis, Jaipur annual precipitation"
             onOpenGlossary={openGlossary}
           />
         </section>

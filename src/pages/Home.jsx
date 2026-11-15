@@ -43,12 +43,12 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
           className="section-gap"
           style={{ maxWidth: '850px' }}
         >
-          <div className="eyebrow">NASA SATELLITE DATA · 1990 TO 2025</div>
+          <div className="eyebrow">NASA MERRA-2 REANALYSIS · 1980 TO 2025</div>
           <h1>
             Is your part of the world getting hotter?
           </h1>
           <p style={{ fontSize: '1.25rem', marginBottom: 'var(--space-4)', lineHeight: '1.6' }}>
-            We read decades of NASA satellite records, measure the change, and tell you
+            We read decades of NASA MERRA-2 reanalysis data (a model product), measure the change, and tell you
             how sure we are, in words anyone can follow.
           </p>
 
@@ -81,16 +81,16 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
               <div>
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--color-text-light)' }}>
-                  FIGURE 1 · SAMPLE CASE
+                  FIGURE 1 · EXAMPLE (SIMULATED DATA)
                 </span>
                 <h2 style={{ fontSize: '1.8rem', marginTop: '4px' }}>
-                  Average summer temperature, Rajasthan, 1990 to 2025
+                  Example (simulated data): average summer temperature, Rajasthan, 1990 to 2025
                 </h2>
               </div>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-1)' }}>
                 <span className="badge badge-significant" style={{ fontSize: '0.8rem' }}>
-                  <CheckCircle2 size={13} /> Statistically Significant
+                  <CheckCircle2 size={13} /> Example: significant (simulated)
                 </span>
                 <button
                   className="ask-about-pill"
@@ -105,7 +105,7 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
 
             {/* One sentence explanation */}
             <p style={{ fontSize: '1.05rem', color: 'var(--color-text-muted)', marginBottom: 'var(--space-4)' }}>
-              May–July daytime surface temperatures captured by NASA MODIS satellites show summers are warming steadily by +0.06 °C per year.
+              This is a simulated example. The numbers in this chart are made up to show how a result is displayed. They are not measurements.
             </p>
 
             {/* Full Width Trend Chart */}
@@ -114,7 +114,7 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
               variable1Name="Summer Average"
               unit1="°C"
               height={360}
-              caption="The black line is each summer's average. The orange line is the trend: about +0.06 °C per year. Sample data shown."
+              caption="The black line is each summer's average. The orange line is the trend. Simulated example data, not measurements."
             />
 
             {/* Stats row with "Show details" toggle */}
@@ -125,7 +125,7 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
               pValue={featured.pValue}
               ci95={featured.ci95}
               yearsUsed={featured.yearsUsed}
-              datasetName="NASA MODIS Land Surface Temp"
+              datasetName="Simulated example data"
               onOpenGlossary={openGlossary}
             />
           </div>
@@ -142,7 +142,7 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
               <div className="eyebrow">3-STEP SCIENTIFIC PIPELINE</div>
               <h2>How the Detective Works</h2>
               <p style={{ fontSize: '1.1rem' }}>
-                We turn complex satellite sensor data into honest, accessible answers in three steps.
+                We turn complex NASA climate data into honest, accessible answers in three steps.
               </p>
             </div>
             <button
@@ -165,7 +165,7 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
               </div>
               <h3 style={{ fontSize: '1.3rem' }}>Pick a Region & Metric</h3>
               <p style={{ fontSize: '0.95rem' }}>
-                Choose any region on Earth and a key satellite indicator—temperature, rainfall, groundwater, or plant greenness.
+                Choose one of four regions (Maharashtra, Rajasthan, Kerala or Gujarat) and a variable: air temperature (mean, night minimum or day maximum), rainfall or surface sunlight.
               </p>
             </div>
 
@@ -177,9 +177,9 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
               <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', marginBottom: '4px' }}>
                 Step 2
               </div>
-              <h3 style={{ fontSize: '1.3rem' }}>Measure 35+ Years</h3>
+              <h3 style={{ fontSize: '1.3rem' }}>Measure Decades of Data</h3>
               <p style={{ fontSize: '0.95rem' }}>
-                We assemble unbroken time series (1990–2025) and calculate Sen's slope to find the rate of change without being fooled by outlier seasons.
+                We assemble monthly time series (1980–2025) and calculate Sen's slope to find the rate of change without being fooled by outlier seasons.
               </p>
             </div>
 
@@ -226,7 +226,7 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
             {/* Box 1 */}
             <div className="card" style={{ padding: 'var(--space-4)' }}>
               <span style={{ fontSize: '0.85rem', color: 'var(--color-text-light)', fontWeight: 600 }}>
-                Rainfall, Jaipur
+                Example (simulated data): rainfall, Jaipur
               </span>
               <h3 style={{ fontSize: '1.5rem', marginTop: '6px', color: 'var(--status-unclear-text)' }}>
                 Not yet clear
@@ -245,7 +245,7 @@ export default function Home({ setActivePage, openGlossary, onOpenDeepDive }) {
                 About 14 more years
               </h3>
               <p style={{ fontSize: '0.95rem' }}>
-                Sample statistical estimate calculated from our power-analysis method.
+                Simulated example number, not a result from our analysis.
               </p>
             </div>
 
