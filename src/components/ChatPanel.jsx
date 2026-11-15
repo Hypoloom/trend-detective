@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Send, Trash2, ArrowLeft, CheckCircle2, AlertTriangle, HelpCircle, Sparkles, AlertCircle } from 'lucide-react';
+import { X, Send, Trash2, Sparkles, AlertCircle } from 'lucide-react';
 import AnswerCard from './AnswerCard';
-import { askAll, LIVE_CHIPS } from '../askAdapter';
+import { askAll, LIVE_CHIPS, REGION_OPTIONS } from '../askAdapter';
 
 /**
  * Robot Icon Header Illustration
@@ -33,6 +33,7 @@ export default function ChatPanel({
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [region, setRegion] = useState('maharashtra');
 
   const panelRef = useRef(null);
   const inputRef = useRef(null);
@@ -71,7 +72,7 @@ export default function ChatPanel({
           id: 'welcome',
           sender: 'bot',
           isWelcome: true,
-          text: `Hello! I am Hypoloom's AI Robot Detective. Ask me about weather, climate trends, or anything on this page. Every answer is strictly grounded in NASA satellite records.`,
+          text: `Hello! I am Hypoloom's AI Robot Detective. Ask me about weather, climate trends, or anything on this page. Live answers use NASA MERRA-2 reanalysis records (a model product), computed by the backend.`,
           timestamp: new Date()
         }
       ]);
@@ -99,7 +100,7 @@ export default function ChatPanel({
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isTyping]);
 
-  // Submit a question  
+  // Submit a question
   const handleSendMessage = async (textToSend) => {
     const question = typeof textToSend === 'string' ? textToSend : inputText;
     if (!question.trim() || isTyping) return;
@@ -109,7 +110,7 @@ export default function ChatPanel({
     setInputText('');
     setIsTyping(true);
     try {
-      const data = await askAll(question.trim(), 'maharashtra');
+      const data = await askAll(question.trim(), region);
       setMessages((prev) => [...prev, { id: `bot-${Date.now()}`, sender: 'bot', data, activeTab: 'plain', timestamp: new Date() }]);
     } catch (err) {
       setMessages((prev) => [...prev, { id: `err-${Date.now()}`, sender: 'bot', error: err.message, timestamp: new Date() }]);
@@ -134,7 +135,7 @@ export default function ChatPanel({
         id: 'fresh-welcome',
         sender: 'bot',
         isWelcome: true,
-        text: `Chat cleared. Pick an example question below or type your own question about satellite observations.`,
+        text: `Chat cleared. Pick an example question below or type your own question about climate records.`,
         timestamp: new Date()
       }
     ]);
@@ -231,7 +232,7 @@ export default function ChatPanel({
                     Try asking:
                   </span>
                   <div className="chip-container">
-                      {LIVE_CHIPS.map((chip, idx) => (
+                    {LIVE_CHIPS.map((chip, idx) => (
                       <button
                         key={idx}
                         className="chip"
@@ -245,7 +246,6 @@ export default function ChatPanel({
               </div>
             );
           }
-
 
           // C) Bot answer (backend text, or Explorer summary for the deep dive)
           if (msg.error) {
@@ -275,14 +275,15 @@ export default function ChatPanel({
                 chartHeight={160}
               />
             </div>
-          );        })}
+          );
+        })}
 
         {/* Typing indicator */}
         {isTyping && (
           <div style={{ alignSelf: 'flex-start', padding: '0.6rem 1rem', backgroundColor: 'var(--color-bg-subtle)', borderRadius: 'var(--radius-md)', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}>
               <Sparkles size={14} color="var(--color-accent)" />
-              Robot Detective is scanning satellite records...
+              Robot Detective is running the analysis...
             </span>
           </div>
         )}
@@ -291,7 +292,7 @@ export default function ChatPanel({
         {hasError && (
           <div style={{ padding: '0.75rem 1rem', backgroundColor: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 'var(--radius-md)', color: '#991B1B', fontSize: '0.85rem' }}>
             <AlertCircle size={15} style={{ display: 'inline', marginRight: '4px' }} />
-            Could not retrieve satellite answer. Try clicking one of the suggested chips.
+            Could not retrieve an answer. Try clicking one of the suggested chips.
           </div>
         )}
 
@@ -300,6 +301,21 @@ export default function ChatPanel({
 
       {/* 3. FIXED CHAT INPUT FOOTER */}
       <div className="chat-panel-footer">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.78rem', color: 'var(--color-text-muted)' }}>
+          <label htmlFor="chat-region-select" style={{ fontWeight: 600 }}>Region</label>
+          <select
+            id="chat-region-select"
+            value={region}
+            onChange={(e) => setRegion(e.target.value)}
+            disabled={isTyping}
+            style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem', borderRadius: 'var(--radius-md)', border: '1px solid var(--color-border-dark)', background: 'var(--color-bg-card)', color: 'var(--color-text-main)' }}
+          >
+            {REGION_OPTIONS.map((r) => (
+              <option key={r.id} value={r.id}>{r.label}</option>
+            ))}
+          </select>
+          <span style={{ color: 'var(--color-text-light)' }}>applies to your next question</span>
+        </div>
         <form
           onSubmit={(e) => {
             e.preventDefault();
@@ -327,7 +343,7 @@ export default function ChatPanel({
           </button>
         </form>
         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-light)', marginTop: '0.4rem', textAlign: 'center' }}>
-            🛡️ <strong>Honesty Rule:</strong> Live answers use computed MERRA-2 results; examples are labelled simulated. Never invents statistics.
+          {'\u{1F6E1}\uFE0F'} <strong>Honesty Rule:</strong> Live answers use computed MERRA-2 results; examples are labelled simulated. Never invents statistics.
         </div>
       </div>
     </aside>
