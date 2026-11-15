@@ -327,7 +327,7 @@ export default function ChatPanel({
           </button>
         </form>
         <div style={{ fontSize: '0.72rem', color: 'var(--color-text-light)', marginTop: '0.4rem', textAlign: 'center' }}>
-          🛡️ <strong>Honesty Rule:</strong> Answers only from satellite data. Never hallucinates statistics.
+            🛡️ <strong>Honesty Rule:</strong> Live answers use computed MERRA-2 results; examples are labelled simulated. Never invents statistics.
         </div>
       </div>
     </aside>
