@@ -46,9 +46,9 @@ export default function Navbar({ activePage, setActivePage, openGlossary, theme 
 
         {/* Right side: Sample Data indicator, Theme Toggle & Glossary */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-          <div className="sample-pill" title="This frontend prototype uses curated sample NASA satellite data">
+          <div className="sample-pill" title="Explorer and Ask use live NASA MERRA-2 reanalysis data. Home and Data Gaps show simulated examples.">
             <AlertCircle size={13} color="var(--color-accent)" />
-            <span>Demo data</span>
+            <span>Live + simulated</span>
           </div>
 
           {/* Dark / Light Mode Toggle Button */}
@@ -82,7 +82,7 @@ export default function Navbar({ activePage, setActivePage, openGlossary, theme 
             className="btn btn-outline btn-sm"
             onClick={openGlossary}
             style={{ borderRadius: 'var(--radius-full)', gap: '0.35rem' }}
-            title="Open plain-language glossary of statistical and satellite terms"
+            title="Open plain-language glossary of statistical and data terms"
           >
             <BookOpen size={14} />
             <span>Glossary</span>

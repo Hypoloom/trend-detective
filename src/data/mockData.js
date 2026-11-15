@@ -1,8 +1,8 @@
 /**
  * PURE CLIENT-SIDE MOCK DATA FOR HYPOLOOM (NASA SPACE APPS CHALLENGE)
  * -------------------------------------------------------------------
- * 100% PURE FRONTEND: Zero backend servers, zero databases, zero external API keys.
- * All sample satellite series, statistical calculations, glossary terms,
+ * SIMULATED EXAMPLE DATA. The Explorer and Ask pages use a live backend on cached NASA MERRA-2 reanalysis (a model product, 1980-2025). The numbers in this file are simulated examples, not measurements.
+ * All sample series, example statistics, glossary terms,
  * and question-answering logic live entirely in memory in this single file.
  */
 
@@ -11,17 +11,17 @@ export const GLOSSARY = {
   significant: {
     term: "Statistically Significant",
     simple: "The pattern is strong enough that it is almost certainly NOT just random luck or weather noise.",
-    detail: "In science, we say a trend is significant when there is less than a 5% chance (p < 0.05) that natural year-to-year swings caused it."
+    detail: "In science, we call a trend significant when a change this large would show up less than 5% of the time (p < 0.05) from natural year-to-year swings alone."
   },
   not_significant: {
     term: "Not Significant (Yet)",
-    simple: "The numbers swing up and down too much from year to year to prove an enduring long-term shift.",
-    detail: "This does not mean nothing is happening! It often means natural variability is large and we need more years of satellite records to be sure."
+    simple: "The numbers swing up and down too much from year to year to show an enduring long-term shift.",
+    detail: "This does not mean nothing is happening! It often means natural variability is large and we need more years of records to be sure."
   },
   p_value: {
     term: "p-value",
     simple: "The 'luck meter'. The smaller this number, the more confident we are that the trend is real.",
-    detail: "A p-value below 0.05 means there is less than a 1-in-20 chance the trend is an accident. In our Rajasthan temperature data, p < 0.001 (less than 1 in 1,000)."
+    detail: "A p-value below 0.05 means that, if nothing were really changing, a trend this large would show up less than 1 time in 20. For example, a p-value of 0.01 means about 1 time in 100."
   },
   confidence_interval: {
     term: "95% Confidence Interval",
@@ -40,7 +40,7 @@ export const GLOSSARY = {
   },
   data_gap: {
     term: "Data Gap / Observational Limit",
-    simple: "When satellites don't have enough years or fine enough detail to confirm a trend.",
+    simple: "When the record doesn't have enough years or fine enough detail to confirm a trend.",
     detail: "Instead of saying 'nothing is happening', we calculate how many additional years or what spatial resolution would be required to settle the question."
   },
   ndvi: {
@@ -141,14 +141,14 @@ function generateSeries(startYear, endYear, baseVal, slope, noiseAmp, roundDecim
   return points;
 }
 
-// 5. SAMPLE SATELLITE RECORDS (In-Memory Database)
+// 5. SIMULATED EXAMPLE RECORDS (In-Memory Database; not measurements)
 export const SERIES_DATABASE = {
   // 1. Rajasthan - Summer Temperature (Significant warming)
   "rajasthan_summer_temp": {
     regionId: "rajasthan",
     variableId: "summer_temp",
-    title: "Average Summer Temperature, Rajasthan",
-    subtitle: "Source: NASA MODIS Land Surface Temperature (1990–2025)",
+    title: "Example (simulated data): Average Summer Temperature, Rajasthan",
+    subtitle: "Simulated example data, not a measurement (1990–2025)",
     verdict: "significant",
     slopePerYear: 0.058,
     pValue: 0.0004,
@@ -157,16 +157,16 @@ export const SERIES_DATABASE = {
     dataset: "NASA MODIS / Terra LST (MOD11A2)",
     series: generateSeries(1990, 2025, 29.8, 0.058, 0.35, 2),
     summary: {
-      plain: "Summers in Rajasthan have been steadily warming by about +0.06 °C every year since 1990. Overall, average summer temperatures are roughly 2.1 °C hotter today than three decades ago.",
-      detailed: "We analyzed 36 consecutive years of satellite land surface temperature records (May–July daytime averages). The Mann-Kendall trend test reveals a statistically robust warming slope of +0.058 °C/year with a p-value well below 0.001.",
-      pro: "Mann-Kendall Tau = 0.542, p = 0.0004 (< 0.001). Sen's Slope = +0.058 °C/yr (95% CI: [0.042, 0.075] °C/yr). Baseline: 1990–2025 (n = 36 summers). Sensor: MODIS LST (1 km resolution) calibrated with early AVHRR Pathfinder."
+      plain: "Simulated example: this made-up series is built to show a steady warming pattern. The numbers are not measurements and are not results for any real place.",
+      detailed: "Simulated example: a Mann-Kendall test on 36 made-up summers, shown only to illustrate how a result is displayed. The numbers were generated for this example and are not measurements.",
+      pro: "Simulated example values, not measurements. Mann-Kendall Tau = 0.542, p = 0.0004 (< 0.001). Sen's Slope = +0.058 °C/yr (95% CI: [0.042, 0.075] °C/yr). Baseline: 1990–2025 (n = 36 summers). Instrument named for illustration only: MODIS LST."
     },
     gap: {
       reason: "Probably no real change",
       status: "clear",
       yearsHave: 36,
       yearsNeed: 36,
-      tip: "We have 36 years of consistent records. The warming trend is statistically confirmed."
+      tip: "Simulated example: no real record is being evaluated here."
     },
     followUps: [
       "Why is this trend significant?",
@@ -179,8 +179,8 @@ export const SERIES_DATABASE = {
   "jaipur_rainfall": {
     regionId: "jaipur",
     variableId: "rainfall",
-    title: "Annual Monsoon Precipitation, Jaipur District",
-    subtitle: "Source: NASA GPM IMERG satellite precipitation estimates (1990–2025)",
+    title: "Example (simulated data): Annual Monsoon Precipitation, Jaipur District",
+    subtitle: "Simulated example data, not a measurement (1990–2025)",
     verdict: "not_significant",
     slopePerYear: -2.15,
     pValue: 0.284,
@@ -189,16 +189,16 @@ export const SERIES_DATABASE = {
     dataset: "NASA GPM IMERG / TRMM Multi-satellite Precipitation",
     series: generateSeries(1990, 2025, 580, -2.15, 95.0, 1),
     summary: {
-      plain: "Rainfall in Jaipur bounces violently up and down from year to year. While totals look slightly lower, the trend is not yet clear enough to declare a true permanent decline.",
-      detailed: "Because monsoon rainfall in semi-arid Rajasthan has tremendous natural variance (some years bring 750 mm while others bring only 390 mm), the apparent downward slope of -2.1 mm/year is obscured by annual weather noise (p = 0.28).",
-      pro: "Mann-Kendall Tau = -0.124, p = 0.284 (fail to reject null hypothesis at α = 0.05). Sen's Slope = -2.15 mm/yr (95% CI: [-6.80, +2.50] mm/yr). Sensor: NASA GPM IMERG Final Run v06."
+      plain: "Simulated example: this made-up rainfall series swings a lot from year to year, so the example shows a case where a trend is not yet clear. It is not a result for any real place.",
+      detailed: "Simulated example: in this made-up series the year-to-year swings are larger than the slope, so no trend can be separated from natural variability. The numbers are not measurements.",
+      pro: "Simulated example values, not measurements. Mann-Kendall Tau = -0.124, p = 0.284 (fail to reject null hypothesis at α = 0.05). Sen's Slope = -2.15 mm/yr (95% CI: [-6.80, +2.50] mm/yr). Sensor: NASA GPM IMERG Final Run v06."
     },
     gap: {
       reason: "Not enough data yet",
       status: "unclear",
       yearsHave: 36,
       yearsNeed: 50,
-      tip: "Monsoon swings hide the signal. We estimate about 14 more years of consistent satellite radar records are required to statistically separate real climate drift from natural drought cycles."
+      tip: "Simulated example: when natural swings are large, many more years of records are needed before a trend can be separated from natural variability."
     },
     followUps: [
       "Why is this trend not significant?",
@@ -211,8 +211,8 @@ export const SERIES_DATABASE = {
   "rajasthan_ndvi": {
     regionId: "rajasthan",
     variableId: "ndvi",
-    title: "Vegetation Index (NDVI), Thar Desert Margin",
-    subtitle: "Source: NASA MODIS 16-day Greenness Index (2000–2025)",
+    title: "Example (simulated data): Vegetation Index (NDVI), Thar Desert Margin",
+    subtitle: "Simulated example data, not a measurement (2000–2025)",
     verdict: "not_significant",
     slopePerYear: 0.0004,
     pValue: 0.420,
@@ -221,16 +221,16 @@ export const SERIES_DATABASE = {
     dataset: "NASA MODIS MOD13A2 (250m)",
     series: generateSeries(2000, 2025, 0.22, 0.0004, 0.03, 3),
     summary: {
-      plain: "Vegetation greenness on the edge of the Thar Desert shows tiny signs of greening, but the satellite signal is too blurry to be certain.",
-      detailed: "Irrigation canals (Indira Gandhi Canal) created pockets of green farms, but desert winds and sand migration mask the effect across broad satellite pixels. The trend p-value is 0.42.",
-      pro: "Mann-Kendall Tau = +0.088, p = 0.420. Sen's Slope = +0.0004 NDVI units/yr (95% CI: [-0.0006, +0.0014]). Sensor: MODIS 250m composite."
+      plain: "Simulated example: in this made-up series the signal is too blurry to be certain. It is not a result for any real place.",
+      detailed: "Simulated example: an illustration of a method limit, where coarse pixels can hide small local changes. The numbers are not measurements.",
+      pro: "Simulated example values, not measurements. Mann-Kendall Tau = +0.088, p = 0.420. Sen's Slope = +0.0004 NDVI units/yr (95% CI: [-0.0006, +0.0014]). Sensor: MODIS 250m composite."
     },
     gap: {
       reason: "Method limit",
       status: "unclear",
       yearsHave: 26,
       yearsNeed: 40,
-      tip: "The 250-meter satellite pixels are too coarse. Finer 30-meter Landsat imagery or daily soil moisture readings would detect localized canal greening much sooner."
+      tip: "Simulated example: coarse pixels can hide small local changes. Finer-resolution data could help in a case like this."
     },
     followUps: [
       "What is a method limit?",
@@ -243,8 +243,8 @@ export const SERIES_DATABASE = {
   "central_valley_water_table": {
     regionId: "central_valley",
     variableId: "water_table",
-    title: "Groundwater Storage Anomaly, California Central Valley",
-    subtitle: "Source: NASA GRACE & GRACE-FO Satellite Gravity (2002–2025)",
+    title: "Example (simulated data): Groundwater Storage Anomaly, California Central Valley",
+    subtitle: "Simulated example data, not a measurement (2002–2025)",
     verdict: "significant",
     slopePerYear: -1.82,
     pValue: 0.0001,
@@ -253,16 +253,16 @@ export const SERIES_DATABASE = {
     dataset: "NASA GRACE / GRACE-FO Tellus Level-3 Land Mascon",
     series: generateSeries(2002, 2025, 8.5, -1.82, 3.8, 1),
     summary: {
-      plain: "Deep underground aquifers in California's Central Valley have been steadily draining at about 1.8 centimeters of water thickness per year.",
-      detailed: "NASA twin satellites weigh underground water by tracking microscopic changes in gravity. Despite wet winters in 2017 and 2023, the multi-decade drawdown from agricultural pumping remains steep and statistically undeniable (p < 0.001).",
-      pro: "Mann-Kendall Tau = -0.684, p = 0.0001. Sen's Slope = -1.82 cm Eq. Water/yr (95% CI: [-2.20, -1.45] cm/yr). Sensor: GRACE & GRACE-FO CSR RL06 Mascons."
+      plain: "Simulated example: this made-up series shows steady drawdown to illustrate a clear trend. It is not a measurement of any real aquifer.",
+      detailed: "Simulated example: shown only to illustrate how a clear result is displayed. The numbers are generated for this example and are not measurements.",
+      pro: "Simulated example values, not measurements. Mann-Kendall Tau = -0.684, p = 0.0001. Sen's Slope = -1.82 cm Eq. Water/yr (95% CI: [-2.20, -1.45] cm/yr). Sensor: GRACE & GRACE-FO CSR RL06 Mascons."
     },
     gap: {
       reason: "Probably no real change",
       status: "clear",
       yearsHave: 24,
       yearsNeed: 24,
-      tip: "Sufficient gravity records collected. The multi-decadal depletion trend is confirmed."
+      tip: "Simulated example: no real record is being evaluated here."
     },
     followUps: [
       "How can satellites weigh water from space?",
@@ -275,8 +275,8 @@ export const SERIES_DATABASE = {
   "kyoto_spring_bloom": {
     regionId: "kyoto",
     variableId: "spring_bloom",
-    title: "Cherry Blossom (Sakura) First-Bloom Date, Kyoto",
-    subtitle: "Source: NASA Phenology & Earth Observation Records (1990–2025)",
+    title: "Example (simulated data): Cherry Blossom (Sakura) First-Bloom Date, Kyoto",
+    subtitle: "Simulated example data, not a measurement (1990–2025)",
     verdict: "significant",
     slopePerYear: -0.28,
     pValue: 0.0042,
@@ -285,19 +285,19 @@ export const SERIES_DATABASE = {
     dataset: "NASA MODIS / Terra Enhanced Vegetation Index & Historic Phenology",
     series: generateSeries(1990, 2025, 96.5, -0.28, 3.2, 1),
     summary: {
-      plain: "Cherry blossoms in Kyoto are blooming roughly 10 days earlier now than they did in 1990, advancing by about 1 day earlier every 3.5 years.",
-      detailed: "Spring temperatures trigger the opening of flower buds. Because March temperatures have steadily increased, the peak bloom day of year (DOY) has shifted from early April toward late March (p = 0.004).",
-      pro: "Mann-Kendall Tau = -0.345, p = 0.0042. Sen's Slope = -0.280 days/yr (95% CI: [-0.410, -0.120] days/yr). Baseline: 1990–2025 (n = 36 seasons)."
+      plain: "Simulated example: this made-up series shows blooms getting earlier, to illustrate a clear trend. It is not a measurement.",
+      detailed: "Simulated example: shown only to illustrate how a clear result is displayed. The numbers are generated and are not measurements.",
+      pro: "Simulated example values, not measurements. Mann-Kendall Tau = -0.345, p = 0.0042. Sen's Slope = -0.280 days/yr (95% CI: [-0.410, -0.120] days/yr). Baseline: 1990–2025 (n = 36 seasons)."
     },
     gap: {
       reason: "Probably no real change",
       status: "clear",
       yearsHave: 36,
       yearsNeed: 36,
-      tip: "Long-term phenology satellite series is robust and significant."
+      tip: "Simulated example: no real record is being evaluated here."
     },
     followUps: [
-      "Why do warmer springs cause earlier blooms?",
+      "How do warmer springs relate to earlier blooms?",
       "How is Day of Year calculated?",
       "Can this be tracked by satellite greenness?"
     ]
@@ -307,8 +307,8 @@ export const SERIES_DATABASE = {
   "amazon_ndvi": {
     regionId: "amazon",
     variableId: "ndvi",
-    title: "Dry Season Canopy Greenness (NDVI), Rondônia Frontier",
-    subtitle: "Source: NASA MODIS MOD13A2 (2000–2025)",
+    title: "Example (simulated data): Dry Season Canopy Greenness (NDVI), Rondônia Frontier",
+    subtitle: "Simulated example data, not a measurement (2000–2025)",
     verdict: "significant",
     slopePerYear: -0.0031,
     pValue: 0.0012,
@@ -317,16 +317,16 @@ export const SERIES_DATABASE = {
     dataset: "NASA MODIS MOD13A2 Terra (250m)",
     series: generateSeries(2000, 2025, 0.78, -0.0031, 0.015, 3),
     summary: {
-      plain: "Rainforest canopy greenness during the dry season has visibly declined over the last 25 years along agricultural development corridors.",
-      detailed: "Deforestation and recurrent droughts have reduced forest canopy moisture and density. The downward trend in dry-season NDVI is statistically significant at p = 0.0012.",
-      pro: "Mann-Kendall Tau = -0.462, p = 0.0012. Sen's Slope = -0.0031 NDVI units/yr (95% CI: [-0.0045, -0.0018]). Sensor: NASA MODIS 16-day composites."
+      plain: "Simulated example: this made-up series shows a decline, to illustrate a clear trend. It is not a measurement.",
+      detailed: "Simulated example: shown only to illustrate how a clear result is displayed. The numbers are generated and are not measurements. No cause is claimed.",
+      pro: "Simulated example values, not measurements. Mann-Kendall Tau = -0.462, p = 0.0012. Sen's Slope = -0.0031 NDVI units/yr (95% CI: [-0.0045, -0.0018]). Sensor: NASA MODIS 16-day composites."
     },
     gap: {
       reason: "Probably no real change",
       status: "clear",
       yearsHave: 26,
       yearsNeed: 26,
-      tip: "Trend is statistically confirmed over 26 years."
+      tip: "Simulated example: no real record is being evaluated here."
     },
     followUps: [
       "What does NDVI greenness score measure?",
@@ -357,7 +357,7 @@ export function getSeries(regionId, variableId) {
     regionId,
     variableId,
     title: `${variable.name}, ${reg.name}`,
-    subtitle: `Source: ${variable.satellite} (1990–2025)`,
+    subtitle: `Simulated example data, not a measurement (1990–2025)`,
     verdict: "significant",
     slopePerYear: slope,
     pValue: 0.012,
@@ -366,16 +366,16 @@ export function getSeries(regionId, variableId) {
     dataset: variable.satellite,
     series: generateSeries(1990, 2025, base, slope, Math.abs(slope * 6), 2),
     summary: {
-      plain: `Records show an ongoing trend in ${variable.name.toLowerCase()} across ${reg.name}.`,
-      detailed: `Mann-Kendall test across 36 years shows a slope of ${slope > 0 ? "+" : ""}${slope} ${variable.unit}/year with p = 0.012.`,
-      pro: `Mann-Kendall Tau = 0.38, p = 0.012. Sen's Slope = ${slope} ${variable.unit}/yr. Sensor: ${variable.satellite}.`
+      plain: `Simulated example: made-up records show an ongoing trend in ${variable.name.toLowerCase()} across ${reg.name}.`,
+      detailed: `Simulated example: a Mann-Kendall test across 36 made-up years shows a slope of ${slope > 0 ? "+" : ""}${slope} ${variable.unit}/year with p = 0.012.`,
+      pro: `Simulated example values, not measurements. Mann-Kendall Tau = 0.38, p = 0.012. Sen's Slope = ${slope} ${variable.unit}/yr. Sensor: ${variable.satellite}.`
     },
     gap: {
       reason: "Probably no real change",
       status: "clear",
       yearsHave: 36,
       yearsNeed: 36,
-      tip: "Data series is sufficient for preliminary analysis."
+      tip: "Simulated example: no real record is being evaluated here."
     },
     followUps: [
       "Why is this trend significant?",
@@ -392,11 +392,11 @@ export const PAGE_SECTIONS = {
   "hero-headline": {
     id: "hero-headline",
     title: "Earth System Trend Detective",
-    summary: "NASA satellites record decades of environmental changes. We measure if changes are real or just seasonal noise.",
+    summary: "NASA data records decades of environmental change. We test whether a change stands out from natural year-to-year swings.",
     deepDive: {
-      plain: "We use 35 years of satellite records to answer whether your part of the world is truly getting hotter, drier, or changing.",
+      plain: "We use decades of NASA MERRA-2 reanalysis data (1980 to 2025, a model product) to ask whether your part of the world shows a trend in temperature, rainfall or sunlight.",
       detailed: "Earth's weather swings wildly from year to year. By analyzing identical seasons over decades, our algorithms filter out temporary weather anomalies.",
-      pro: "Long-term climate records (1990–2025) analyzed with non-parametric Mann-Kendall statistics and Sen's slope to prevent outlier distortions."
+      pro: "Long-term climate records (1980–2025) analyzed with non-parametric Mann-Kendall statistics and Sen's slope to prevent outlier distortions."
     },
     suggestedQuestions: [
       "Why is 35 years of data necessary?",
@@ -406,12 +406,12 @@ export const PAGE_SECTIONS = {
   },
   "figure-1-rajasthan": {
     id: "figure-1-rajasthan",
-    title: "Figure 1: Rajasthan Summer Temperature",
-    summary: "Summers in Rajasthan have warmed by about +0.06 °C per year since 1990—over 2.1 °C hotter overall.",
+    title: "Figure 1 (simulated example): Summer Temperature, Rajasthan",
+    summary: "Simulated example: the numbers in this chart are made up to show how results are displayed. They are not measurements.",
     deepDive: {
-      plain: "Summers in Rajasthan have been steadily warming since the 1990s, and today fits that 35-year pattern.",
-      detailed: "NASA MODIS land surface temperature readings across May, June, and July show a statistically robust warming slope of +0.058 °C per year.",
-      pro: "Sen's slope = +0.058 °C/yr (95% CI: [0.042, 0.075]). Mann-Kendall p-value = 0.0004 (< 0.001). Sensor: NASA MODIS Land Surface Temperature."
+      plain: "This is a simulated example. It shows how a clear warming result would be displayed. It is not a measurement.",
+      detailed: "Simulated example: a made-up May to July temperature series is used only to illustrate the display. Its numbers are not measurements.",
+      pro: "Simulated example values, not measurements: Sen's slope = +0.058 °C/yr, p = 0.0004. Instrument named for illustration only: MODIS Land Surface Temperature."
     },
     suggestedQuestions: [
       "Why is this trend significant?",
@@ -424,8 +424,8 @@ export const PAGE_SECTIONS = {
     title: "How It Works: Pick, Measure, Understand",
     summary: "Our 3-step scientific pipeline: choose a region, calculate the Sen's slope, and run the Mann-Kendall test.",
     deepDive: {
-      plain: "First pick a place, then let satellites measure 35+ years, and finally read the verdict in simple English.",
-      detailed: "Step 1 selects a calibrated NASA sensor. Step 2 calculates median pairwise rate of change. Step 3 calculates the p-value to reject accidental trends.",
+      plain: "First pick a place, then we measure decades of NASA MERRA-2 data, and finally read the verdict in simple English.",
+      detailed: "Step 1 selects a place and a variable. Step 2 calculates median pairwise rate of change. Step 3 calculates the p-value to reject accidental trends.",
       pro: "Pipeline: Earthdata spatial aggregation -> Sen's median slope -> Mann-Kendall tau score -> α = 0.05 significance classification."
     },
     suggestedQuestions: [
@@ -439,8 +439,8 @@ export const PAGE_SECTIONS = {
     title: "Data Gaps: What Is Missing",
     summary: "When a trend is not yet clear, we do not stop at 'not significant'. We calculate how much more data would settle it.",
     deepDive: {
-      plain: "Sometimes the answer is 'not yet'. We tell you if you need more years of records or finer satellite cameras.",
-      detailed: "Natural monsoon variability in Jaipur hides the trend line. We estimate about 14 more years of GPM radar records are needed to settle the question.",
+      plain: "Sometimes the answer is 'not yet'. We tell you if you need more years of records or finer-resolution data.",
+      detailed: "In the simulated Jaipur example, natural monsoon variability hides the trend line, so many more years of records would be needed. The example numbers are not results.",
       pro: "Statistical power analysis based on noise-to-signal variance ratio (σ_noise / |slope|). Identifies sample-size vs method-resolution limits."
     },
     suggestedQuestions: [
@@ -453,11 +453,11 @@ export const PAGE_SECTIONS = {
   "explorer-workbench": {
     id: "explorer-workbench",
     title: "Interactive Data Explorer",
-    summary: "Explore satellite observations across 6 global regions with customizable year sliders and dual-variable overlay.",
+    summary: "Explore cached NASA MERRA-2 reanalysis data (a model product) for four regions: Maharashtra, Rajasthan, Kerala and Gujarat.",
     deepDive: {
-      plain: "Pick any region and variable to see decades of satellite observations with the trendline drawn on top.",
-      detailed: "You can compare two variables simultaneously (such as summer heat and groundwater loss) on a synchronized time axis.",
-      pro: "Real-time client-side slicing (1990–2025). Computes active sample size, confidence interval bracket, and sensor metadata."
+      plain: "Pick a region and a variable to see decades of reanalysis data with the trendline drawn on top.",
+      detailed: "You can compare two variables simultaneously (such as air temperature and rainfall) on a synchronized time axis.",
+      pro: "Cached MERRA-2 monthly data (1980–2025). Computes active sample size, confidence interval bracket, and sensor metadata."
     },
     suggestedQuestions: [
       "How do I compare two variables?",
@@ -469,11 +469,11 @@ export const PAGE_SECTIONS = {
   "data-gaps-matrix": {
     id: "data-gaps-matrix",
     title: "Earth System Data Gap Matrix",
-    summary: "A live audit of observational limits across NASA satellite time series.",
+    summary: "An example table (simulated data) of the kinds of limits a record can have.",
     deepDive: {
-      plain: "A scorecard of which regional trends are proven true, and which ones need more satellite passes to settle.",
+      plain: "An example scorecard (simulated data) of which trends are clear and which ones need more data to settle.",
       detailed: "Categorizes unclear trends into 'Not enough data yet' (high noise), 'Method limit' (coarse pixels), or 'Probably no real change'.",
-      pro: "Evaluates GPM IMERG, MODIS NDVI, and OMI NO₂ time series against minimum detection thresholds."
+      pro: "Simulated example only, not computed from data: GPM IMERG, MODIS NDVI, and OMI NO₂ time series against minimum detection thresholds."
     },
     suggestedQuestions: [
       "Why can't we confirm Jaipur's rain decline?",
@@ -494,7 +494,7 @@ export const PAGE_SECTIONS = {
     suggestedQuestions: [
       "Why is Mann-Kendall called non-parametric?",
       "How does p-value measure luck?",
-      "What satellites are used in Hypoloom?"
+      "What data does Hypoloom use?"
     ]
   }
 };
@@ -529,7 +529,7 @@ export const SAMPLE_CHIPS = [
  *
  * HONESTY RULE:
  * This function only returns statements and numbers derived directly from
- * satellite records. It never fabricates explanations or unsupported claims.
+ * the simulated example records above (not measurements). It never fabricates explanations or unsupported claims.
  */
 export function getAnswer(question = "", sectionContext = null) {
   const q = question.toLowerCase().trim();
@@ -607,7 +607,7 @@ export const KNOWN_DATA_GAPS = [
     verdict: "not_significant",
     reason: "Not enough data yet",
     explanation: "High natural year-to-year swings (±180 mm) hide the trend line.",
-    whatWouldSettleIt: "About 14 more years of consistent satellite records."
+    whatWouldSettleIt: "Many more years of consistent records (simulated example)."
   },
   {
     region: "Thar Desert Edge",
@@ -627,11 +627,11 @@ export const KNOWN_DATA_GAPS = [
     satellite: "NASA MODIS LST",
     yearsHave: 36,
     yearsNeed: 36,
-    result: "Clear (+0.06 °C/yr)",
+    result: "Example (simulated data)",
     verdict: "significant",
     reason: "Probably no real change",
-    explanation: "Signal-to-noise ratio is high. 36 summers show consistent heating.",
-    whatWouldSettleIt: "Nothing more needed (Trend statistically verified)."
+    explanation: "Simulated example, not a measurement.",
+    whatWouldSettleIt: "Not applicable (simulated example)."
   },
   {
     region: "Sahel Belt",
@@ -651,10 +651,10 @@ export const KNOWN_DATA_GAPS = [
     satellite: "NASA GRACE & GRACE-FO",
     yearsHave: 24,
     yearsNeed: 24,
-    result: "Clear (-1.82 cm/yr)",
+    result: "Example (simulated data)",
     verdict: "significant",
     reason: "Probably no real change",
-    explanation: "Gravity loss is severe and exceeds natural drought variation.",
-    whatWouldSettleIt: "Nothing more needed (Depletion statistically verified)."
+    explanation: "Simulated example, not a measurement.",
+    whatWouldSettleIt: "Not applicable (simulated example)."
   }
 ];

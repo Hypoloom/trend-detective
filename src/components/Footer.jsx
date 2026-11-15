@@ -19,11 +19,11 @@ export default function Footer({ setActivePage, openGlossary }) {
             </div>
             <p style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--color-text-muted)' }}>
               Built for the NASA Space Apps Challenge <em>"Be An Earth System Trend Detective"</em>.
-              We take decades of satellite observations, measure the trajectory, and honestly state how sure we are in words anyone can understand.
+              We take decades of MERRA-2 reanalysis data (a NASA model product, not a direct satellite measurement), measure the trajectory, and honestly state how sure we are in words anyone can understand.
             </p>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', color: 'var(--color-text-light)' }}>
               <ShieldCheck size={16} color="var(--color-accent)" />
-              <span><strong>Honesty Rule:</strong> We never invent causes or statistics not present in the data.</span>
+              <span><strong>Honesty Rule:</strong> We never invent causes. Numbers labelled Example (simulated data) are illustrations only.</span>
             </div>
           </div>
 
@@ -61,7 +61,7 @@ export default function Footer({ setActivePage, openGlossary }) {
             </ul>
           </div>
 
-          {/* Column 3: Satellite Data Sources */}
+          {/* Column 3: Data Sources */}
           <div>
             <h4 style={{ fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--color-text-light)', marginBottom: '1rem' }}>
               NASA Earth Data Sources
@@ -69,19 +69,23 @@ export default function Footer({ setActivePage, openGlossary }) {
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.85rem', color: 'var(--color-text-muted)' }}>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ExternalLink size={12} />
-                <span>NASA MODIS (Terra & Aqua Land Surface Temp & NDVI)</span>
+                <span>NASA MERRA-2 reanalysis (live Explorer and Ask pages)</span>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ExternalLink size={12} />
-                <span>NASA GPM IMERG (Global Precipitation Measurement)</span>
+                <span>Simulated examples only: NASA MODIS (Terra & Aqua Land Surface Temp & NDVI)</span>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ExternalLink size={12} />
-                <span>NASA/GFZ GRACE & GRACE-FO (Groundwater Storage)</span>
+                <span>Simulated examples only: NASA GPM IMERG (Global Precipitation Measurement)</span>
               </li>
               <li style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                 <ExternalLink size={12} />
-                <span>NASA Aura OMI & Sentinel-5P (Atmospheric NO₂)</span>
+                <span>Simulated examples only: NASA/GFZ GRACE & GRACE-FO (Groundwater Storage)</span>
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                <ExternalLink size={12} />
+                <span>Simulated examples only: NASA Aura OMI & Sentinel-5P (Atmospheric NO₂)</span>
               </li>
             </ul>
           </div>
@@ -96,7 +100,7 @@ export default function Footer({ setActivePage, openGlossary }) {
             <span style={{ cursor: 'pointer', textDecoration: 'underline' }} onClick={openGlossary}>
               Scientific Terms Glossary
             </span>
-            <span>All numbers on this demonstration site are sample data.</span>
+            <span>Live Explorer and Ask pages use MERRA-2 reanalysis values. All other numbers here are simulated examples.</span>
           </div>
         </div>
       </div>

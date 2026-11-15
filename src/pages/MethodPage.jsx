@@ -39,7 +39,7 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
           <h1>How the Detective Tests for Truth</h1>
           <p style={{ fontSize: '1.2rem', marginTop: 'var(--space-2)', lineHeight: '1.6' }}>
             When someone claims "summers are getting hotter" or "wells are running dry",
-            how do scientists actually prove it? Here is the math and satellite technology behind Hypoloom,
+            how do scientists test it? Here is the math and the data behind Hypoloom,
             explained in plain language without intimidating jargon.
           </p>
         </section>
@@ -49,12 +49,12 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
           <Database size={24} color="var(--color-accent)" style={{ flexShrink: 0, marginTop: '2px' }} />
           <div>
             <h3 style={{ fontSize: '1.15rem', color: 'var(--color-accent)', marginBottom: '4px' }}>
-              Notice: This Frontend Prototype Uses Curated Sample Data
+              Notice: Some pages use live data and some use simulated examples
             </h3>
             <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', margin: 0, lineHeight: '1.6' }}>
-              All charts and queries currently run against realistic mock data held in <code>src/data/mockData.js</code>.
-              The values match documented scientific trends from published NASA studies (such as Rajasthan summer warming and California groundwater drawdown).
-              The modular architecture allows your team's backend or NASA Earthdata API to plug in seamlessly via the <code>getAnswer()</code> function.
+              The Explorer and Ask pages use a live backend on cached NASA MERRA-2 reanalysis data (a model product, 1980 to 2025) for four regions: Maharashtra, Rajasthan, Kerala and Gujarat. The other pages (Home, Data Gaps and the glossary) use simulated example data held in <code>src/data/mockData.js</code>; its numbers are not measurements.
+              
+              
             </p>
           </div>
         </div>
@@ -63,7 +63,7 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
         <section className="section-gap">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--space-3)' }}>
             <h2 style={{ fontSize: '1.75rem', margin: 0 }}>
-              1. The Two Tests We Run on Every Satellite Record
+              1. The Two Tests We Run on Every Record
             </h2>
             <button
               className="ask-about-pill"
@@ -117,9 +117,9 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
                 Significant
               </span>
               <div>
-                <strong style={{ fontSize: '1rem', color: 'var(--color-text-main)' }}>The trend is real (p &lt; 0.05).</strong>
+                <strong style={{ fontSize: '1rem', color: 'var(--color-text-main)' }}>A trend was detected (p &lt; 0.05).</strong>
                 <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
-                  There is less than a 5% chance (often less than 0.1%) that this pattern could happen by pure chance. You can trust this trend when planning for farming, infrastructure, or public health.
+                  If nothing were changing, a pattern this strong would show up less than 5% of the time. Treat it as a candidate trend and check it against other sources before relying on it.
                 </p>
               </div>
             </div>
@@ -141,9 +141,9 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
                 Not enough data
               </span>
               <div>
-                <strong style={{ fontSize: '1rem', color: 'var(--color-text-main)' }}>The satellite record is too short or too coarse.</strong>
+                <strong style={{ fontSize: '1rem', color: 'var(--color-text-main)' }}>The record is too short or too coarse.</strong>
                 <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
-                  Satellites like GRACE only launched in 2002. If a region requires 40 years to overcome statistical variance, we honestly flag the observation as incomplete.
+                  If a region would need many more years to overcome natural swings, we honestly flag the record as incomplete.
                 </p>
               </div>
             </div>
@@ -153,15 +153,25 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
         {/* SECTION 3: NASA SATELLITE FLEET */}
         <section className="section-gap">
           <h2 style={{ fontSize: '1.75rem', marginBottom: 'var(--space-3)' }}>
-            3. NASA Satellite Fleet Behind the Data
+            3. The Data Behind This Site
           </h2>
 
           <div className="card" style={{ padding: 'var(--space-4)' }}>
             <ul style={{ listStyle: 'none', paddingLeft: 0, display: 'flex', flexDirection: 'column', gap: 'var(--space-3)' }}>
               <li style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-start' }}>
+                <Database size={20} color="var(--color-accent)" style={{ flexShrink: 0, marginTop: '3px' }} />
+                <div>
+                  <strong style={{ fontSize: '1.05rem' }}>NASA MERRA-2 (used by the live Explorer and Ask pages)</strong>
+                  <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
+                    A reanalysis: a computer model of the atmosphere combined with many observations. It is a model product, not a direct satellite measurement. We use cached monthly values for 1980 to 2025 for four regions.
+                  </p>
+                </div>
+              </li>
+
+              <li style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-start', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
                 <Satellite size={20} color="var(--color-accent)" style={{ flexShrink: 0, marginTop: '3px' }} />
                 <div>
-                  <strong style={{ fontSize: '1.05rem' }}>NASA MODIS (Terra & Aqua Satellites)</strong>
+                  <strong style={{ fontSize: '1.05rem' }}>Simulated examples only: NASA MODIS (Terra & Aqua Satellites)</strong>
                   <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
                     Measures infrared radiation emitted by land to calculate Land Surface Temperature (LST), and measures reflected red/near-infrared light to compute vegetation greenness (NDVI). Orbiting Earth since 1999/2002.
                   </p>
@@ -171,7 +181,7 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
               <li style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-start', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
                 <Satellite size={20} color="#2563EB" style={{ flexShrink: 0, marginTop: '3px' }} />
                 <div>
-                  <strong style={{ fontSize: '1.05rem' }}>NASA GPM IMERG (Global Precipitation Measurement)</strong>
+                  <strong style={{ fontSize: '1.05rem' }}>Simulated examples only: NASA GPM IMERG (Global Precipitation Measurement)</strong>
                   <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
                     An international satellite constellation using spaceborne dual-frequency radar and microwave imagers to map global rain and snowfall every 30 minutes.
                   </p>
@@ -181,7 +191,7 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
               <li style={{ display: 'flex', gap: 'var(--space-2)', alignItems: 'flex-start', borderTop: '1px solid var(--color-border)', paddingTop: 'var(--space-3)' }}>
                 <Satellite size={20} color="#0891B2" style={{ flexShrink: 0, marginTop: '3px' }} />
                 <div>
-                  <strong style={{ fontSize: '1.05rem' }}>NASA/GFZ GRACE & GRACE-FO (Gravity Recovery and Climate Experiment)</strong>
+                  <strong style={{ fontSize: '1.05rem' }}>Simulated examples only: NASA/GFZ GRACE & GRACE-FO (Gravity Recovery and Climate Experiment)</strong>
                   <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
                     Twin satellites chasing each other 220 km apart. When the lead satellite passes over heavy underground water, Earth's gravity pulls it forward. By measuring changes in the distance between the two satellites down to a micron, NASA weighs water stored deep in aquifers.
                   </p>
@@ -197,7 +207,7 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
           <h2 style={{ fontSize: '1.45rem', marginBottom: 'var(--space-1)' }}>The Trend Detective Honesty Pledge</h2>
           <p style={{ fontSize: '0.95rem', color: 'var(--color-text-muted)', maxWidth: '640px', margin: '0 auto var(--space-3)', lineHeight: '1.6' }}>
             We pledge to never hallucinate causes, exaggerate confidence, or turn an inconclusive result into a sensational headline.
-            If the satellite record is too short or noisy to know for sure, we will say so clearly, show the progress bar, and tell you what data would settle the question.
+            If the record is too short or noisy to know for sure, we will say so clearly, show the progress bar, and tell you what data would settle the question.
           </p>
           <button className="btn btn-primary btn-sm" onClick={() => openGlossary && openGlossary()}>
             <BookOpen size={14} />
