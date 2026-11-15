@@ -1,50 +1,32 @@
 # Hypoloom backend API
 
-Written against commit `78efe11`. Started from Ankit's version (written from reading `app.py`,
-`ui_adapter.py`, `answer.py`, `stream.py`, `fallback_form.py`, `tests/real_pond.json` and the tests)
-and updated by the owner for the later commits.
-Labels: **VERIFIED** = run or tested and seen passing; everything else is described from code and
-marked UNVERIFIED where it matters. No endpoint body here was checked against a live response
-except where it says so.
+Written against commit `953d85e`. Labels: **IN CODE** = read in `app.py` when this was written. **TESTED** = covered by a passing test (unittest 120 OK, pytest 250 passed). **NOT RUN** = described from code, never run. Anything unlabelled comes from the project record and was not re-checked. No body here was compared with a live response.
 
 ## How to run
 
-```
-cd backend
-pip install -r requirements.txt
-python app.py
-```
+    cd backend
+    pip install -r requirements.txt
+    python app.py
 
-- The server listens on `http://127.0.0.1:8000` (`debug=False`).
-- `answer.load_domain` now finds `domains.json` next to `answer.py` when it is not in the current
-  folder, so the server and pytest work from any folder (VERIFIED, `test_app_cache.py` under pytest).
-- `requirements.txt`: numpy, pandas, scipy, earthaccess, xarray, h5netcdf, pydap, flask.
-- Tests: from `backend`, `python -m unittest discover -s tests -t .`; from the repo root, `python -m pytest -q`.
-  Add `-rs` to pytest to see why a test was skipped.
+- Local: `http://127.0.0.1:8000`, `debug=False` (IN CODE).
+- Deployed: Render runs `gunicorn app:app`; Vercel rewrites `/api/*` to it. The first request after the free instance sleeps can take 50+ seconds.
+- Tests: from `backend`, `python -m unittest discover -s tests -t .`; from the repo root, `python -m pytest -q`. Run both.
 
 ## Data comes from cache files
 
-The server reads monthly series from `backend/stream_cache/<name>_<west>_<south>_<east>_<north>.csv`
-(for Maharashtra: `t2m_72_16_80_21.csv`). The CSVs are not in git (`stream_cache` is untracked);
-the owner supplies them as a zip. A full set is 20 files (4 regions x 5 variables).
+The server reads monthly series from `backend/stream_cache/<name>_<west>_<south>_<east>_<north>.csv` (Maharashtra air temperature: `t2m_72_16_80_21.csv`). 20 files are tracked in git (4 regions x 5 variables). `backend/.gitignore` ignores `stream_cache*/`, so any new CSV needs `git add -f`.
 
-- **The server does not fetch from NASA.** Before any series is loaded, `app.py` checks that the CSV for
-  that region and variable exists (it matches the four box numbers in the file name). If it is missing,
-  the endpoint returns 404 `{"error": "cached data missing for <Region>: <keys>. ..."}` (VERIFIED,
-  `tests/test_app_cache.py`).
-- The check looks only at whether the file exists. It does not check that the file covers 1980-01 to
-  2025-12. A file that exists but is short may still make `stream.get_series` try NASA (UNVERIFIED, not run).
-- Any other unexpected exception becomes 500 `{"error": "server error: <ExceptionName>"}` instead of an
-  HTML page. Errors Flask raises itself (for example 405 for a wrong method) keep Flask's own response.
+- **The server never fetches from NASA while serving** (IN CODE). It checks that the CSV exists (box numbers in the file name are parsed and compared to the region box).
+- The check is existence only, not coverage of 1980-2025 (NOT RUN). The analysis range is fixed at 1980-2025 (IN CODE).
+- An unexpected exception becomes 500 `{"error": "server error: <ExceptionName>"}` (IN CODE). HTTP errors Flask raises itself (such as 405) keep Flask's own response.
 
 ## Common rules
 
-- Every response has `Access-Control-Allow-Origin: *`.
-- NaN and infinity become `null`.
+- Every response has `Access-Control-Allow-Origin: *` (IN CODE). NaN and infinity become `null`.
 - Errors from `app.py` are `{"error": "<message>"}` with status 400, 404 or 500.
 - Datasets: `T2M`, `PRECIP`, `SUNLIGHT`, `T2M_MIN`, `T2M_MAX` (default `T2M`).
-- Regions: `maharashtra` (default), `rajasthan`, `kerala`, `gujarat`. The last three boxes are rough proposals.
-- Data are MERRA-2 monthly reanalysis (a model product, not a satellite measurement), 1980-2025.
+- Regions: `maharashtra` (default), `rajasthan`, `kerala`, `gujarat`. The last three boxes are rough proposals, not checked on a map.
+- Data are MERRA-2 monthly reanalysis (a model product, not a direct measurement), 1980-2025.
 
 ## Endpoints
 
@@ -52,166 +34,134 @@ the owner supplies them as a zip. A full set is 20 files (4 regions x 5 variable
 Returns `{"ok": true}`.
 
 ### GET /api/datasets
-```
-{"datasets": [{"id", "label", "units", "default_slope", "ready", "ready_regions"}],
- "regions":  [{"id", "label", "box": [west, south, east, north]}]}
-```
-- `ready_regions` is an object `{region id: true/false}`: whether the cached CSV exists for each region.
-- `ready` is true only when `ready_regions` is true for all four regions.
-- `default_slope` is `null` for every dataset today.
-- With all 20 CSVs present, all five datasets are `ready: true` (VERIFIED on the owner's machine).
-- Existence only; coverage is not checked.
+Returns `{"datasets": [{id, label, units, default_slope, ready, ready_regions}], "regions": [{id, label, box}]}`.
+- `ready_regions` is `{region id: true/false}` (CSV exists). `ready` is true only when all four are true.
+- `default_slope` is `null` for every dataset today. `box` is `[west, south, east, north]`.
 
 ### GET /api/series?dataset=&region=
-Returns `{"dataset", "region", "units", "dates": ["YYYY-MM"], "values": [...]}`.
-Status 400 for an unknown dataset or region. Status 404 if the cached CSV is missing.
+Returns `{dataset, region, units, dates: ["YYYY-MM"], values: [...]}`. 400 for an unknown dataset or region; 404 if the CSV is missing.
 
 ### GET /api/analysis?dataset=&region=&slope=
-Returns the JSON from `contract.run_analysis`. `slope` is an optional number: the "meaningful" trend per year.
-If it is left out, `meaningful.resolve` chooses one.
-Status 400 for an unknown dataset or region, 404 for a missing file, 500 for an `ImportError` or `TypeError`
-inside the call (or the generic 500 above for anything else).
-
-Fields:
+Returns `contract.run_analysis` output. `slope` is an optional "meaningful" trend per year.
+- Left out: `meaningful.resolve` picks the size and rule (IN CODE).
+- Given: no rule is attached; what that does to the `meaningful` block is NOT RUN.
+- Not a number: ignored as if absent (IN CODE via `get(type=float)`; NOT RUN).
+- 400 unknown dataset or region; 404 missing CSV; 500 for an import or call-shape error, or the generic 500.
 
 | Field | Contents |
 |---|---|
 | `verdict` | `code`, `label`, `summary` |
 | `years` | `have`, `needed_low`, `needed_mid`, `needed_high`, `needed_for_meaningful`, `meaningful_slope` |
-| `trend` | `slope_per_year`, `slope_ci` [low, high], `ols_slope_per_year`, `p_value`, `p_value_method`, `min_detectable_slope`, `units`, `p_value_without_extreme_years`, `fragile` |
+| `trend` | `slope_per_year` (Theil-Sen on annual means), `slope_ci`, `ols_slope_per_year`, `p_value` (Mann-Kendall), `p_value_method`, `min_detectable_slope`, `units`, `p_value_without_extreme_years`, `fragile` |
 | `noise` | `sigma`, `lag1_autocorr` |
-| `chart` | `points` [{`year`, `value`}], `trend_line` (2 points: `year`, `trend`, `low`, `high`), `seasonality_removed` |
-| `provenance` | `dataset`, `variable`, `region`, `start`, `end`, `simulated` |
-| `meaningful` | `rule`, `basis`, `value`, `sensitivity` (a list; empty when the verdict is `detected`) |
-| `why` | see below; `null` when the verdict is `detected` |
+| `chart` | `points` [{year, value}], `trend_line` (2 points, mid-year values: year, trend, low, high), `seasonality_removed` |
+| `provenance` | `dataset`, `variable`, `region`, `start`, `end` (strings `YYYY-MM`), `simulated` |
+| `meaningful` | `rule`, `basis`, `value`, `sensitivity` (list of {factor, value, verdict_code, needed_years}; empty when `detected`) |
+| `why` | see below; `null` when `detected` |
 | other | `caveats` (list of text), `tested_count` |
 
-Verdict codes: `detected`, `data_limited`, `no_trend`, `inconclusive`, `masked`.
-When `slope` is given, `meaningful_rule` is `None`; what that does to the `meaningful` block is UNVERIFIED.
+Verdict codes: `detected`, `data_limited`, `no_trend`, `inconclusive`, `masked`. Chart values are annual means of the seasonality-removed series (anomalies). The band is uncertainty around the trend line, not around points.
 
-**`verdict.summary` for `no_trend`** (VERIFIED for Maharashtra air and day temperature): it says no trend was
-found over N years and that this is not proof nothing is happening; gives the estimated change with its 95% range;
-says whether that whole range is smaller than the size chosen as meaningful (so a change of that size is unlikely),
-or reaches it (so it cannot be ruled out); gives the smallest trend the record could probably detect; and, when
-halving the meaningful size would turn the verdict into `data_limited`, adds a sentence saying the record would be
-too short to tell at half that size. `N` can be a fraction such as 45.9.
+**`fragile`** is true when the verdict is `detected` but the Mann-Kendall p-value is 0.05 or more after dropping the 3 years furthest from the median annual value. The verdict code does not change. The dropped years are not returned.
 
-**The `why` object** (VERIFIED for Maharashtra `t2m`: class `no_trend_below_meaningful`, `threshold_sensitive` true,
-`meaningful_value` 0.02; `null` for Maharashtra sunlight, which is `detected`). Every value is copied from the
-engine's own numbers.
+**`verdict.summary` for `no_trend`** says no trend was found over N years and that this is not proof nothing is happening; gives the estimated change with its 95% range; says whether that range is smaller than the meaningful size or reaches it; gives the smallest trend the record could probably detect; and, if halving the meaningful size would make the verdict `data_limited`, says so. The summary rounds years; `years.have` and `why.years_have` stay fractional.
+
+**The `why` object** (TESTED for Maharashtra air temperature; NOT RUN on real `masked`, `data_limited` or `inconclusive` data):
 
 | Field | Contents |
 |---|---|
-| `class` | `no_trend_below_meaningful` (slope range lies entirely below the meaningful size), `no_trend_reaches_meaningful` (the range reaches it), `data_limited`, `masked`, `inconclusive` |
+| `class` | `no_trend_below_meaningful`, `no_trend_reaches_meaningful`, `data_limited`, `masked`, `inconclusive`, or plain `no_trend` |
 | `years_have` | years of data used |
-| `years_needed_for_meaningful` | years needed to detect the meaningful size, or `null` |
-| `meaningful_value` | the meaningful size, units per year. A project choice, not a standard |
+| `years_needed_for_meaningful` | years needed, or `null` |
+| `meaningful_value` | meaningful size per year. A project choice, not a standard |
 | `min_detectable_slope` | smallest trend the record could probably detect |
-| `slope_ci` | `[low, high]` 95% range of the slope, or `null` |
-| `threshold_sensitive` | true if halving or doubling the meaningful size changes the verdict; `null` if no sensitivity was computed |
-
-For `no_trend` the class is only the two `no_trend_*` values when a meaningful size and a finite range exist;
-otherwise it is `no_trend`. The same `why` appears inside `/api/ask` -> `result.axes[].result` for analyzed axes.
+| `slope_ci` | `[low, high]`, or `null` |
+| `threshold_sensitive` | true if halving or doubling the size changes the verdict; `null` if not computed |
 
 ### GET /api/ui/analysis?dataset=&region=
-Takes the same query parameters. It calls `/api/analysis` internally. If that is not 200, the same body and status are returned.
-Otherwise the contract is reshaped:
-
-| Field | Contents |
-|---|---|
-| `regionId`, `variableId` | the region and dataset ids from the request |
-| `title`, `subtitle` | text built from `provenance` |
-| `verdict` | `significant`, `not_enough_data` or `not_significant` |
-| `verdict_code` | the contract code |
-| `slopePerYear`, `pValue`, `ci95` | from `trend` (`null` if absent) |
-| `yearsUsed` | `years.have`, rounded, or `null` |
-| `dataset` | `provenance.dataset` |
-| `series` | list of `{year (integer), value, trend, low, high}`; `1980.5` becomes `1980`. `low` and `high` are the uncertainty band around the trend line, not around each point |
-| `summary` | `{plain, detailed, pro}` text. `plain` is `verdict.summary` |
-| `gap` | `null` when `verdict_code` is `detected`; otherwise `{reason, status, yearsHave, yearsNeed, tip}` |
-| `followUps` | always `[]` |
-| `simulated` | boolean |
-| `caption` | text about anomalies |
-| `contract` | the whole `/api/analysis` JSON (including `why`) |
-| `fragile` | boolean |
-| `fragileNote` | text, or `null` |
-
-Mapping: `detected` gives `significant`; `data_limited` gives `not_enough_data`; `no_trend`, `inconclusive`, `masked` give `not_significant`.
-`yearsNeed` is `needed_for_meaningful`, else `needed_mid`, else `needed_low`, else `have`.
-For `no_trend`, `gap.tip` says the meaningful size is a project choice and changing it can change the verdict.
+Same parameters. Calls `/api/analysis`; if that is not 200, its body and status are returned. Otherwise it returns `regionId`, `variableId`, `title`, `subtitle`, `verdict` (`significant`, `not_enough_data`, `not_significant`), `verdict_code`, `slopePerYear`, `pValue`, `ci95`, `yearsUsed`, `dataset`, `series` ([{year (integer), value, trend, low, high}]), `summary` ({plain, detailed, pro}), `gap`, `followUps` (always `[]`), `simulated`, `caption`, `contract` (the whole analysis), `fragile`, `fragileNote`.
+- Mapping: `detected` -> `significant`; `data_limited` -> `not_enough_data`; `no_trend`, `inconclusive`, `masked` -> `not_significant`.
+- `gap` is `null` when `detected`; else `{reason, status, yearsHave, yearsNeed, tip}`. `fragileNote` is `null` unless `fragile`.
 
 ### GET /api/answer?region=&domain=
-`domain` defaults to `pond`. Returns `answer.build(...)` output (fields under `/api/ask` -> `result`).
-Status 400 for an unknown region or an unknown domain (the unknown-domain 400 is UNVERIFIED, not run).
-Status 404 if a NASA variable the domain needs has no cached CSV for the region.
-Here `region` in the output reads like `Maharashtra box (72, 16, 80, 21)`.
-
+`domain` defaults to `pond`, `region` to `maharashtra`. Returns `answer.build(...)` output (see `result` under `/api/ask`); `result.region` reads like `Maharashtra box (72, 16, 80, 21)`.
+- 400 for an unknown region or domain (IN CODE; the domain 400 is NOT RUN).
+- 404 only if **all** the domain's NASA variables lack a CSV for the region (IN CODE). If only some are missing, those axes come back as `data_unavailable`.
 ### POST or GET /api/ask
-Request fields (JSON body wins over query string for each field):
+The chat endpoint. A JSON body wins over the query string for each field.
 
 | Field | Rules |
 |---|---|
-| `question` | required text; empty gives 400 `missing 'question'` |
-| `region` | default `maharashtra`; unknown gives 400 |
-| `level` | `plain` (default), `detailed` or `pro`; anything else gives 400 |
-| `user_inputs` | object, default `{}`; send it in the JSON body (a query-string value is text and gives 400). Keys must be the routed domain's `ask_user` axis names, otherwise 400 `unknown user_inputs` |
+| `question` | required; empty gives 400 `missing 'question'` |
+| `region` | default `maharashtra`; unknown gives 400. **A region named in the question text overrides it.** Possessives such as "Kerala's" are not recognized |
+| `level` | `plain` (default), `detailed`, `pro`; else 400 |
+| `user_inputs` | object (default `{}`), JSON body only. Keys must be the routed domain's `ask_user` axis names, else 400 `unknown user_inputs` |
+| `context` | optional object `{domain, region}` from the previous answer, used only for follow-ups. A non-object gives 400. An unknown `context.region` becomes `null` |
 
-Order of checks: question, region, level and the type of `user_inputs` first, so a bad region or level gives 400 even
-for a question that would fall back. Then the router runs. A fallback needs no cached data. For a routed domain,
-the `user_inputs` key names are checked, then the cache: a missing CSV for any NASA variable the domain needs gives
-404 `cached data missing ...` (VERIFIED, `tests/test_app_cache.py`).
+`ask_user` axes today: `pond` -> `shade`, `pond_size`; `citrus` -> `region`. Other domains have none.
 
-**Answer (status 200, `fallback: false`):**
-`{fallback, domain, confidence, route_source, level, text, used_llm, phrase_note, abstained, result}`.
-`text` is the phrased answer at the chosen level, from fixed templates (no LLM today). `result` is the
-`answer.build` output:
-`domain, region` (label only), `axes`, `abstained`, `abstain_reason`, `risk_window`, `tested_count`, `llm_allowed_phrases`, `caveats`.
+#### How a question is handled (IN CODE)
+1. 400 checks: question, region, level, `user_inputs` type, `context` type.
+2. A forecast note is computed (words like "next year", "forecast", "predict").
+3. Four answer modules are tried **in this order**: `yearrank`, `diurnal`, `season`, `regioncompare`. Each returns an answer or nothing. Nothing means no match, missing cached data, or its own text failing the wording guard; the request then falls through silently to the router.
+4. The router runs. A router match wins over follow-up rules.
+5. Only if the router falls back **and** `context` yields a follow-up plan, a follow-up answer is returned.
+6. Otherwise the guided form is returned (fallback).
+7. On a router match: `user_inputs` keys are checked (400), then the cache (404 only if all the domain's NASA variables are missing), then `answer.build`, then the template phrasing. The forecast note is prepended.
 
-An axis row: `name, label, source` (`nasa_data`, `ask_user` or other), `critical`, `status`
-(`analyzed`, `provided`, `needs_user`, `not_knowable`, `data_unavailable`), `result`, plus `prompt` when `status` is `needs_user`.
-`result` is a full analysis for `analyzed`, `{"value": ...}` for `provided`, and `null` otherwise.
-`abstained` is true when a critical axis is `needs_user`, `not_knowable` or `data_unavailable`; then `abstain_reason` is text, otherwise `null`.
-`risk_window` is `null` unless abstained and computable; it holds `months`, `month_names`, `definition`, `recent_vs_earlier`, `caveat`.
-`recent_vs_earlier` is `null` or `{recent_years, earlier_years, difference, direction ("higher"/"lower"), units}`.
+#### Answer response (200, `fallback: false`)
+Router answers: `{fallback, domain, confidence, route_source, level, text, used_llm, phrase_note, abstained, result}`. `text` comes from fixed templates (LLM off; `used_llm` is `false`). `route_source` values:
 
-**Wording rules in `text`** (VERIFIED on the real pond answer at all three levels, and by `tests/test_task_a.py`
-on synthetic limited axes):
-- A `no_trend` axis line carries the engine's range-versus-meaningful-size sentences (at `plain`, also the 95% range sentence).
-- A `data_limited`, `masked` or `inconclusive` axis line ends with "Evidence is limited: ...".
-- The guard (`phrase.check_text`) flags: "no change"-style wording for a `no_trend` axis unless a hedge such as
-  "not proof" appears; "found a trend"-style wording for a limited axis; and a text with a limited axis but no
-  limited-evidence marker.
-- If the template ever fails the guard, it is still returned and the reasons go into `phrase_note` after
-  `template failed guard:`.
-What else `route_source` and `phrase_note` can contain is UNVERIFIED. `used_llm` is `false` (LLM off).
+| Value | When |
+|---|---|
+| `rules` | the router matched keywords (`confidence` 0.6 to under 1) |
+| `yearrank` | "Was this year hotter/wetter/sunnier than usual?" (`domain: year_vs_record`) |
+| `diurnal` | "Are days heating faster than nights?" (`domain: diurnal`) |
+| `season` | named season months, e.g. monsoon months or pre-monsoon (`domain: season`) |
+| `regioncompare` | "Which region is warming fastest?" (`domain: region_compare`) |
+| `followup` | a follow-up (response also has `followup: true` and `intent`) |
 
-**Fallback (status 200, `fallback: true`):**
-`{fallback, reason, form, form_text, used_llm}`. There is no `domain`, `text` or `result`. The client should show the form, or just `form_text`.
+The four module answers have `confidence: 1.0`. `phrase_note` can be "LLM off", a note that the guard rejected LLM text, or an adapter error (the full set is NOT RUN).
 
-- `form_text` is plain text: the message, then numbered topics, each with `e.g.` examples.
-- `form` has `type: "guided_form"`, `message`, `original_question`,
-  `step1_pick_topic` (`field: "domain"`, `options` [{`id`, `label`, `examples`}], the last option has `id: "none"`),
-  and `step2_followups` (domain id -> list of {`name`, `prompt`, `why_it_matters`}).
+**Router domains:** `pond`, `citrus`, `heat`, `monsoon`, `sunshine`, `apple`, `cherry_blossom`. A single keyword hit is too weak and falls back to the form; two single-word hits, or one phrase hit, route. `apple` and `cherry_blossom` abstain on every request and still list the region's trends, which do not describe an orchard or tree (the four regions were not chosen for them). All domain content is `evidence_status: UNVERIFIED`.
+
+**`result` from `answer.build`** (router answers and follow-ups): `domain, region` (label), `axes`, `abstained`, `abstain_reason`, `risk_window`, `tested_count`, `llm_allowed_phrases`, `caveats`.
+- Axis row: `name, label, source` (`nasa_data`, `ask_user`, `not_knowable`), `critical`, `status` (`analyzed`, `provided`, `needs_user`, `not_knowable`, `data_unavailable`), `result`, plus `prompt` when `needs_user`. `result` is a full analysis for `analyzed`, `{"value": ...}` for `provided`, else `null`.
+- `abstained` is true when a critical axis is `needs_user`, `not_knowable` or `data_unavailable`; then `abstain_reason` is text, else `null`.
+- `risk_window` is `null` unless abstained and computable (pond only today). It holds `months`, `month_names`, `definition`, `recent_vs_earlier` (`null` or `{recent_years, earlier_years, difference, direction, units}`), `caveat`. It is descriptive only.
+
+**Module answers.** `year_vs_record` and `region_compare` return `result.axes = []` and `result.risk_window = null` (IN CODE). `season` and `diurnal` return the module's own `result` with one analyzed axis (axes shape from the module, not re-read here). `year_vs_record` result keys (project record): `region, variable, year, first_year, years_in_record, earlier_years, top_rank, rank, value, earlier_mean, earlier_sd, gap, current_year, units, tested_count, caveats`. These answers rank or compare; they do not claim a trend or a forecast.
+
+**Follow-ups** (`followup: true`): `{fallback: false, followup: true, intent, domain, confidence: 1.0, route_source: "followup", level, text, used_llm, phrase_note, abstained, result}`. Intents: `why_no_trend`, `causal`, `how_sure`, `variable`, `region`. `result` holds one axis when the question names a variable. They work only when `context.domain` is one of `pond, citrus, heat, monsoon, sunshine, apple, cherry_blossom`. After a `year_vs_record`, `region_compare`, `season` or `diurnal` answer, a follow-up falls to the guided form.
+
+**Wording rules in `text`** (TESTED): the guard `phrase.check_text` checks every number against the result, bans causal words and "proof" wording in the writer's own text, requires abstention wording when abstained or limited, and requires "co-occurs with" when a trend is reported. Trends are never explained as causes.
+
+#### Fallback (200, `fallback: true`)
+`{fallback, reason, form, form_text, used_llm}`. No `domain`, `text` or `result`. `reason` is "no keyword matched", "ambiguous between domains" or "match too weak". `form` has `type: "guided_form"`, `message`, `original_question`, `step1_pick_topic` (`field: "domain"`, `options` [{id, label, examples}], last option `id: "none"`), `step2_followups`. `form_text` is the same as plain text.
 
 ## Fields that can be null
 
 | Field | Where | When null |
 |---|---|---|
-| `why` | `contract` and each analyzed axis result | `null` when the verdict is `detected` |
-| `why.threshold_sensitive`, `why.slope_ci` | inside `why` | `null` when no sensitivity was computed / the range is not finite |
-| `years.needed_high` | `contract.years` (also in `/api/ui/analysis` -> `contract`, and in `/api/ask` -> `result.axes[].result.years`) | `null` for Maharashtra air temperature and day temperature (`t2m_max`). Rainfall and sunlight have numbers. Treat it as nullable. |
-| `years.needed_for_meaningful` | same place | `ui_adapter` is written to cope with `null`; no `null` example seen. |
-| `trend.p_value_without_extreme_years` | `contract.trend` | `null` when the series has fewer than 10 annual values (rule given by the owner; matches `p_drop3` being `None` in the engine). |
-| `fragileNote` | `/api/ui/analysis` | `null` unless `trend.fragile` is true, then a fixed sentence about extreme years. |
-| `gap` | `/api/ui/analysis` | `null` when `verdict_code` is `detected`. |
-| `abstain_reason`, `risk_window` | `/api/ask` -> `result` | `null` when not abstained (`risk_window` also when it cannot be computed). |
-| `slopePerYear`, `pValue`, `ci95`, `yearsUsed` | `/api/ui/analysis` | `null` when the contract lacks the value. |
+| `why` | `contract` and each analyzed axis result | when `detected` |
+| `why.threshold_sensitive`, `why.slope_ci` | inside `why` | not computed / range not finite |
+| `years.needed_high` | `contract.years` | `null` for Maharashtra air temperature and day temperature; nullable everywhere |
+| `years.needed_for_meaningful` | same | handled by `ui_adapter`; no null example seen |
+| `trend.p_value_without_extreme_years` | `contract.trend` | fewer than 10 annual values |
+| `fragileNote`, `gap` | `/api/ui/analysis` | see above |
+| `abstain_reason`, `risk_window` | `/api/ask` -> `result` | not abstained (`risk_window` also when not computable) |
+| `slopePerYear`, `pValue`, `ci95`, `yearsUsed` | `/api/ui/analysis` | contract lacks the value |
+
+## Method caveats (from the engine; project record)
+- Slope is Theil-Sen on annual means; the p-value is Mann-Kendall on annual means (ignores autocorrelation; the measured false-positive rate on null data was 8% against 5% expected).
+- "Years needed" follows Weatherhead et al. with an AR(1) noise assumption; it carries roughly 20 to 60% uncertainty, clips lag-1 autocorrelation at 0.9, and does not model level shifts.
+- Season subsets treat non-adjacent months as adjacent in the noise estimate, so years-needed there is approximate.
+- The meaningful sizes in `meaningful.py` (0.02 K/yr; 5% of the mean per decade for rain; 2% for sunlight) are project placeholders, not standards. Verdicts depend on them.
+- "No trend found" is not proof of no trend. A past trend is not a forecast. All regions come from one reanalysis, so they are not independent checks.
 
 ## UNVERIFIED summary
-
-- Response bodies for `/api/series`, `/api/analysis`, `/api/answer` are described from code and `real_pond.json`, not from live responses.
-- The unknown-domain 400 on `/api/answer`, an invalid `slope` text, and what happens when a CSV exists but does not cover 1980-2025.
-- What `meaningful` holds when `?slope=` is given.
-- The full set of values `route_source` and `phrase_note` can take.
-- The `why` object for `masked`, `data_limited` and `inconclusive` results on real data (only `no_trend` and `detected` were checked on real data).
-- Which regions' cached files are present on a given machine; only Maharashtra is exercised by the smoke tests.
+- Bodies for `/api/series`, `/api/analysis`, `/api/answer` are described from code, not live responses.
+- The `/api/answer` unknown-domain 400, a non-numeric `slope`, `slope` effects on `meaningful`, and a CSV that exists but does not cover 1980-2025.
+- The full set of `phrase_note` values, and the exact `result` shape of `season` and `diurnal`.
+- The `why` object for `masked`, `data_limited` and `inconclusive` on real data.
+- Region boxes for Rajasthan, Kerala and Gujarat (not checked on a map).
