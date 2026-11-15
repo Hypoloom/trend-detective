@@ -90,7 +90,7 @@ def test_datasets_shape(client):
     assert set(data) == {"datasets", "regions"}
     assert [d["id"] for d in data["datasets"]] == list(STREAM_KEYS)
     for d in data["datasets"]:
-        assert set(d) == {"id", "label", "units", "default_slope", "ready"}
+        assert set(d) == {"id", "label", "units", "default_slope", "ready", "ready_regions"}
         assert isinstance(d["ready"], bool)
     assert [r["id"] for r in data["regions"]] == ["maharashtra", "rajasthan", "kerala", "gujarat"]
     for r in data["regions"]:
