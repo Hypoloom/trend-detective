@@ -131,7 +131,7 @@ export default function MethodPage({ openGlossary, onOpenDeepDive }) {
               <div>
                 <strong style={{ fontSize: '1rem', color: 'var(--color-text-main)' }}>Weather swings are larger than the change (p ≥ 0.05).</strong>
                 <p style={{ fontSize: '0.92rem', color: 'var(--color-text-muted)', margin: '4px 0 0' }}>
-                  Weather swings are larger than the change (p ≥ 0.05). This does NOT mean the climate is motionless. The record may be too short or too noisy to show a change, or there may be no real change. The Explorer's 'Why this result' box says which.
+                  This does NOT mean the climate is motionless. The record may be too short or too noisy to show a change, or there may be no real change. The Explorer's 'Why this result' box says which.
                 </p>
               </div>
             </div>
