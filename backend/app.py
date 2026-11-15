@@ -306,6 +306,24 @@ def ask_endpoint():
         region = named
     note = followup.forecast_note(question)
 
+    import yearrank
+
+    def _yr_get(key, reg):
+        ds = {"t2m": "T2M", "precip": "PRECIP", "sunlight": "SUNLIGHT"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    yr = yearrank.answer(question, region, _yr_get, level)
+    if yr:
+        yres = dict(yr["result"], axes=[], risk_window=None)
+        return jsonify(clean({"fallback": False, "domain": "year_vs_record", "confidence": 1.0,
+                              "route_source": "yearrank", "level": level, "text": yr["text"],
+                              "used_llm": False, "phrase_note": "LLM off", "abstained": False,
+                              "result": yres}))
+
     r = router.route(question)
     if r.is_fallback:
         plan = followup.plan(question, context, region)
