@@ -148,7 +148,7 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
                             "sensitivity": sens}
     return {
         "verdict": {"code": code, "label": label,
-                    "summary": _summary(code, r["ts"], units, r["years_have"], lo, hi,
+                    "summary": _summary(code, r["ts"], units, round(r["years_have"]), lo, hi,
                                         nm=nm, meaningful=meaningful, md=md, fragile=fragile,
                                         ci=(ts_lo, ts_hi), sens=sens)},
         "years": {"have": r["years_have"], "needed_low": lo, "needed_mid": mid,
