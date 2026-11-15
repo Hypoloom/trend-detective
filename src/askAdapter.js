@@ -35,6 +35,17 @@ const REASON_LABELS = {
   no_trend: 'No trend found (not proof of no change)'
 };
 
+const TOPIC_LABELS = {
+  pond: 'Pond turning green',
+  citrus: 'Small oranges',
+  heat: 'Is it getting hotter?',
+  monsoon: 'Monsoon rainfall',
+  sunshine: 'Sunshine',
+  year_vs_record: 'This year compared with the record',
+  region_compare: 'Region comparison',
+  season: 'Season trend'
+};
+
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
 
 // chart.trend_line has two points {year, trend, low, high}. Interpolate a
@@ -94,9 +105,9 @@ export async function askAll(question, region = 'maharashtra', context = null) {
   const regionOption = REGION_OPTIONS.find((r) => r.id === region); const shownOption = REGION_OPTIONS.find((r) => r.label === result.region) || regionOption; const shownRegion = shownOption ? shownOption.id : region;
   return {
     kind: 'answer',
-    topic: first.domain,
+    topic: first.domain, topicLabel: TOPIC_LABELS[first.domain] || first.domain,
     regionId: shownRegion,
-    regionLabel: result.region || (regionOption ? regionOption.label : region),
+    regionLabel: result.region || (first.domain === 'region_compare' ? 'All four regions' : (regionOption ? regionOption.label : region)),
     startYear: prov.start ? String(prov.start).slice(0, 4) : null,
     endYear: prov.end ? String(prov.end).slice(0, 4) : null,
     abstained: Boolean(first.abstained),

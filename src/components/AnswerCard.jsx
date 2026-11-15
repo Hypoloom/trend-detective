@@ -112,7 +112,7 @@ export default function AnswerCard({ data, activeTab = 'plain', onTabChange, cha
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', marginBottom: '0.75rem', borderBottom: '1px solid var(--color-border)', paddingBottom: '0.6rem' }}>
-        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-main)' }}>{data.topic}</span>
+        <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--color-text-main)' }}>{data.topicLabel || data.topic}</span>
         {data.kind === 'answer' && (
           <span style={{ fontSize: '0.75rem', color: 'var(--color-text-light)' }}>{header}</span>
         )}
