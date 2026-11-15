@@ -77,6 +77,21 @@ def _summary(code, slope, units, years, lo, hi, nm=None, meaningful=None, md=Non
     return ("The evidence is mixed: the trend is not significant, and the record "
             "is not clearly too short.")
 
+def _why(code, years, nm, meaningful, md, ci, sens):
+    """Structured reason for a non-detected result. Every value comes from the engine; no new numbers."""
+    if code == "detected":
+        return None
+    lo, hi = (ci if ci is not None else (None, None))
+    finite = lo is not None and hi is not None and np.isfinite(lo) and np.isfinite(hi)
+    cls = code
+    if code == "no_trend" and meaningful and finite:
+        cls = ("no_trend_below_meaningful" if max(abs(lo), abs(hi)) < meaningful
+               else "no_trend_reaches_meaningful")
+    codes = {e.get("verdict_code") for e in (sens or [])}
+    return {"class": cls, "years_have": years, "years_needed_for_meaningful": nm,
+            "meaningful_value": meaningful, "min_detectable_slope": md,
+            "slope_ci": [_f(lo, 8), _f(hi, 8)] if finite else None,
+            "threshold_sensitive": (len(codes) > 1) if codes else None}
 
 def run_analysis(s, dataset, variable, units, region, regions=None,
                  deseason=True, simulated=False, meaningful=None, meaningful_rule=None):
@@ -151,6 +166,7 @@ def run_analysis(s, dataset, variable, units, region, regions=None,
         "caveats": caveats,
         "tested_count": n_tested,
         "meaningful": meaningful_block,
+        "why": _why(code, r["years_have"], nm, meaningful, md, (ts_lo, ts_hi), sens),
     }
 
 

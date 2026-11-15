@@ -30,6 +30,16 @@ class WhyNoTrend(unittest.TestCase):
                 self.assertNotIn("even with a long record", t)
                 lo, hi = r["trend"]["slope_ci"]
                 self.assertLess(max(abs(lo), abs(hi)), r["years"]["meaningful_slope"])
+    def test_structured_why_field(self):
+        try:
+            r = _run("t2m")
+        except FileNotFoundError:
+            self.skipTest("cache CSV missing")
+        w = r["why"]
+        self.assertEqual(w["class"], "no_trend_below_meaningful")
+        self.assertTrue(w["threshold_sensitive"])
+        self.assertEqual(w["meaningful_value"], 0.02)
+        self.assertIsNone(_run("sunlight")["why"])
 
 
 if __name__ == "__main__":
