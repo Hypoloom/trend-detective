@@ -324,6 +324,24 @@ def ask_endpoint():
                               "used_llm": False, "phrase_note": "LLM off", "abstained": False,
                               "result": yres}))
 
+    import season
+
+    def _se_get(key, reg):
+        ds = {"t2m": "T2M", "precip": "PRECIP", "sunlight": "SUNLIGHT",
+              "t2m_min": "T2M_MIN", "t2m_max": "T2M_MAX"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    se = season.answer(question, region, _se_get, level)
+    if se:
+        return jsonify(clean({"fallback": False, "domain": "season", "confidence": 1.0,
+                              "route_source": "season", "level": level, "text": se["text"],
+                              "used_llm": False, "phrase_note": se["phrase_note"], "abstained": False,
+                              "result": se["result"]}))
+
     import regioncompare
 
     def _rc_get(key, reg):
