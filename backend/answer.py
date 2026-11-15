@@ -44,7 +44,7 @@ def _risk_window(series_by_axis, rule, last_n=20):
 
 
 def build(domain_id, region_label, box, start, end, user_inputs=None,
-          domains_path="domains.json", workers=32):
+          domains_path="domains.json", workers=32, is_cached=None):
     dom = load_domain(domain_id, domains_path)
     user_inputs = user_inputs or {}
     axes, series, phrases, tested = [], {}, [], 0
@@ -54,7 +54,7 @@ def build(domain_id, region_label, box, start, end, user_inputs=None,
                "status": None, "result": None}
         if ax["source"] == "nasa_data":
             key = ax["variable"]
-            if key not in stream.VARIABLES:
+            if key not in stream.VARIABLES or (is_cached is not None and not is_cached(key)):
                 row["status"] = "data_unavailable"
                 phrases.append({"id": f"axis:{ax['name']}",
                                 "text": f"{row['label']}: no data is available for this factor yet."})

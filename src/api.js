@@ -4,11 +4,12 @@ export async function fetchSeries(dataset, region = 'maharashtra') {
   return res.json()
 }
 
-export async function askQuestion(question, level = 'plain', region = 'maharashtra') {
+// context (optional) = { domain, region } of the last answer, used for follow-up questions.
+export async function askQuestion(question, level = 'plain', region = 'maharashtra', context = null) {
   const res = await fetch('/api/ask', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ question, level, region })
+    body: JSON.stringify({ question, level, region, context })
   })
   if (!res.ok) throw new Error(`ask failed: ${res.status}`)
   return res.json()

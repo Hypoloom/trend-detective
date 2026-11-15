@@ -110,7 +110,7 @@ export default function ChatPanel({
     setInputText('');
     setIsTyping(true);
     try {
-      const data = await askAll(question.trim(), region);
+      const last = [...messages].reverse().find((m) => m.sender === 'bot' && m.data && m.data.kind === 'answer' && m.data.topic); const data = await askAll(question.trim(), region, last ? { domain: last.data.topic, region: last.data.regionId } : null);
       setMessages((prev) => [...prev, { id: `bot-${Date.now()}`, sender: 'bot', data, activeTab: 'plain', timestamp: new Date() }]);
     } catch (err) {
       setMessages((prev) => [...prev, { id: `err-${Date.now()}`, sender: 'bot', error: err.message, timestamp: new Date() }]);

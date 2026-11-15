@@ -22,7 +22,7 @@ export const REGION_OPTIONS = [
 export const LIVE_CHIPS = [
   'Why is my pond turning green?',
   'My pond turned green',
-  'Why are my oranges so small this year?'
+  'Why are my oranges so small this year?', 'Is it getting hotter where I live?', 'Is the monsoon getting wetter or drier?', 'Are summers getting sunnier or cloudier?'
 ];
 
 // Short label chosen only from the backend's why.class.
@@ -33,6 +33,18 @@ const REASON_LABELS = {
   masked: 'Opposite regional trends may be hidden by combining them',
   inconclusive: 'Evidence is mixed',
   no_trend: 'No trend found (not proof of no change)'
+};
+
+const TOPIC_LABELS = {
+  pond: 'Pond turning green',
+  citrus: 'Small oranges',
+  heat: 'Is it getting hotter?',
+  monsoon: 'Monsoon rainfall',
+  sunshine: 'Sunshine', apple: 'Apples and sweetness', cherry_blossom: 'Cherry blossom timing',
+  year_vs_record: 'This year compared with the record',
+  region_compare: 'Region comparison',
+  season: 'Season trend',
+  diurnal: 'Day compared with night'
 };
 
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);
@@ -58,8 +70,8 @@ function buildSeries(chart) {
 }
 
 // One /api/ask call per level, so the three tabs show backend text.
-export async function askAll(question, region = 'maharashtra') {
-  const res = await Promise.all(LEVELS.map((l) => askQuestion(question, l, region)));
+export async function askAll(question, region = 'maharashtra', context = null) {
+  const res = await Promise.all(LEVELS.map((l) => askQuestion(question, l, region, context)));
   const first = res[0];
   if (first.fallback) {
     return {
@@ -91,12 +103,12 @@ export async function askAll(question, region = 'maharashtra') {
   );
   const series = withChart ? buildSeries(withChart.result.chart) : [];
   const prov = withChart && withChart.result.provenance ? withChart.result.provenance : {};
-  const regionOption = REGION_OPTIONS.find((r) => r.id === region);
+  const regionOption = REGION_OPTIONS.find((r) => r.id === region); const shownOption = REGION_OPTIONS.find((r) => r.label === result.region) || regionOption; const shownRegion = shownOption ? shownOption.id : region;
   return {
     kind: 'answer',
-    topic: first.domain,
-    regionId: region,
-    regionLabel: result.region || (regionOption ? regionOption.label : region),
+    topic: first.domain, topicLabel: TOPIC_LABELS[first.domain] || first.domain,
+    regionId: shownRegion,
+    regionLabel: result.region || (first.domain === 'region_compare' ? 'All four regions' : (regionOption ? regionOption.label : region)),
     startYear: prov.start ? String(prov.start).slice(0, 4) : null,
     endYear: prov.end ? String(prov.end).slice(0, 4) : null,
     abstained: Boolean(first.abstained),

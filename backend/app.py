@@ -257,12 +257,12 @@ def answer_endpoint():
         dom = answer.load_domain(domain)
     except (KeyError, ValueError):
         return error(f"unknown domain '{domain}'", 400)
-    missing = missing_cache(region, nasa_keys(dom))
+    missing = missing_cache(region, nasa_keys(dom)); missing = missing if len(missing) == len(nasa_keys(dom)) else []
     if missing:
         return cache_error(region, missing)
     box = tuple(REGIONS[region]["box"])
     try:
-        out = answer.build(domain, f"{REGIONS[region]['label']} box {box}", box, 1980, 2025)
+        out = answer.build(domain, f"{REGIONS[region]['label']} box {box}", box, 1980, 2025, is_cached=lambda k: cache_file(k, box) is not None)
     except FileNotFoundError as e:
         return error(str(e), 404)
     return jsonify(clean(out))
@@ -270,8 +270,10 @@ def answer_endpoint():
 
 @app.route("/api/ask", methods=["GET", "POST"])
 def ask_endpoint():
-    """Question in, phrased answer out. LLM off: router -> answer.build -> template phrase."""
+    """Question in, phrased answer out. LLM off: router -> answer.build -> template phrase.
+    If the router does not match and the frontend sent context, try follow-up rules."""
     import answer
+    import followup
     import phrase
     import router
     from fallback_form import form_to_text
@@ -293,9 +295,94 @@ def ask_endpoint():
     user_inputs = arg("user_inputs", {}) or {}
     if not isinstance(user_inputs, dict):
         return error("user_inputs must be an object", 400)
+    context = arg("context", None)
+    if context is not None and not isinstance(context, dict):
+        return error("context must be an object", 400)
+    if context is not None and context.get("region") not in REGIONS:
+        context = dict(context, region=None)
+
+    named = followup.region_in_text(question)
+    if named:
+        region = named
+    note = followup.forecast_note(question)
+
+    import yearrank
+
+    def _yr_get(key, reg):
+        ds = {"t2m": "T2M", "precip": "PRECIP", "sunlight": "SUNLIGHT"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    yr = yearrank.answer(question, region, _yr_get, level)
+    if yr:
+        yres = dict(yr["result"], axes=[], risk_window=None)
+        return jsonify(clean({"fallback": False, "domain": "year_vs_record", "confidence": 1.0,
+                              "route_source": "yearrank", "level": level, "text": yr["text"],
+                              "used_llm": False, "phrase_note": "LLM off", "abstained": False,
+                              "result": yres}))
+
+    import diurnal
+
+    def _di_get(key, reg):
+        ds = {"t2m_min": "T2M_MIN", "t2m_max": "T2M_MAX"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    di = diurnal.answer(question, region, _di_get, level)
+    if di:
+        return jsonify(clean({"fallback": False, "domain": "diurnal", "confidence": 1.0,
+                              "route_source": "diurnal", "level": level, "text": di["text"],
+                              "used_llm": False, "phrase_note": di["phrase_note"], "abstained": False,
+                              "result": di["result"]}))
+
+    import season
+
+    def _se_get(key, reg):
+        ds = {"t2m": "T2M", "precip": "PRECIP", "sunlight": "SUNLIGHT",
+              "t2m_min": "T2M_MIN", "t2m_max": "T2M_MAX"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    se = season.answer(question, region, _se_get, level)
+    if se:
+        return jsonify(clean({"fallback": False, "domain": "season", "confidence": 1.0,
+                              "route_source": "season", "level": level, "text": se["text"],
+                              "used_llm": False, "phrase_note": se["phrase_note"], "abstained": False,
+                              "result": se["result"]}))
+
+    import regioncompare
+
+    def _rc_get(key, reg):
+        ds = {"t2m": "T2M", "precip": "PRECIP", "sunlight": "SUNLIGHT",
+              "t2m_min": "T2M_MIN", "t2m_max": "T2M_MAX"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    rc = regioncompare.answer(question, _rc_get, level)
+    if rc:
+        rres = dict(rc["result"], axes=[], risk_window=None)
+        return jsonify(clean({"fallback": False, "domain": "region_compare", "confidence": 1.0,
+                              "route_source": "regioncompare", "level": level, "text": rc["text"],
+                              "used_llm": False, "phrase_note": "LLM off", "abstained": False,
+                              "result": rres}))
 
     r = router.route(question)
     if r.is_fallback:
+        plan = followup.plan(question, context, region)
+        if plan:
+            return _followup_response(plan, level, note)
         return jsonify(clean({"fallback": True, "reason": r.reason, "form": r.form,
                               "form_text": form_to_text(r.form), "used_llm": False}))
 
@@ -310,19 +397,68 @@ def ask_endpoint():
     if "region" in allowed:
         inputs.setdefault("region", label)
 
-    missing = missing_cache(region, nasa_keys(dom))
+    missing = missing_cache(region, nasa_keys(dom)); missing = missing if len(missing) == len(nasa_keys(dom)) else []
     if missing:
         return cache_error(region, missing)
     try:
-        out = answer.build(r.domain, label, box, 1980, 2025, user_inputs=inputs)
+        out = answer.build(r.domain, label, box, 1980, 2025, user_inputs=inputs, is_cached=lambda k: cache_file(k, box) is not None)
     except FileNotFoundError as e:
         return error(str(e), 404)
     text, rep = phrase.phrase_with_report(out, level)
+    if note:
+        text = note + "\n\n" + text
     return jsonify(clean({"fallback": False, "domain": r.domain, "confidence": r.confidence,
                           "route_source": r.source, "level": level, "text": text,
                           "used_llm": rep.source == "llm", "phrase_note": rep.note,
                           "abstained": out["abstained"], "result": out}))
 
+
+def _followup_response(plan, level, note):
+    """Rebuild the planned domain for the planned region, keep one axis if asked, phrase it with the templates."""
+    import answer
+    import phrase
+
+    region = plan["region"]
+    label = REGIONS[region]["label"]
+    box = tuple(REGIONS[region]["box"])
+    dom = answer.load_domain(plan["domain"])
+    missing = missing_cache(region, nasa_keys(dom)); missing = missing if len(missing) == len(nasa_keys(dom)) else []
+    if missing:
+        return cache_error(region, missing)
+    inputs = {}
+    if any(a["name"] == "region" and a["source"] == "ask_user" for a in dom["axes"]):
+        inputs["region"] = label
+    try:
+        out = answer.build(plan["domain"], label, box, 1980, 2025, user_inputs=inputs, is_cached=lambda k: cache_file(k, box) is not None)
+    except FileNotFoundError as e:
+        return error(str(e), 404)
+
+    analyzed = [a for a in out["axes"] if a["status"] == "analyzed"]
+    focus = None
+    if plan["focus"]:
+        focus = next((a for a in analyzed if a["name"] == plan["focus"]), None)
+    elif plan["pick"] == "not_detected":
+        focus = next((a for a in analyzed if a["result"]["verdict"]["code"] != "detected"), None)
+        focus = focus or (analyzed[0] if analyzed else None)
+    elif plan["pick"] == "first":
+        focus = analyzed[0] if analyzed else None
+
+    shown = out
+    if focus is not None:
+        shown = dict(out)
+        shown["axes"] = [focus]
+        shown["abstained"] = False
+        shown["abstain_reason"] = ""
+        shown["tested_count"] = 1
+        shown.pop("risk_window", None)
+    text, rep = phrase.phrase_with_report(shown, level)
+    lead = "\n\n".join(x for x in (note, plan["lead"]) if x)
+    if lead:
+        text = lead + "\n\n" + text
+    return jsonify(clean({"fallback": False, "followup": True, "intent": plan["intent"],
+                          "domain": plan["domain"], "confidence": 1.0, "route_source": "followup",
+                          "level": level, "text": text, "used_llm": rep.source == "llm",
+                          "phrase_note": rep.note, "abstained": shown["abstained"], "result": shown}))
 
 if __name__ == "__main__":
     # debug=True restarts the server when you edit a file. Turn it off for the demo.
