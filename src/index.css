@@ -344,18 +344,18 @@ p {
 }
 
 .btn-primary {
-  background-color: var(--color-text-main);
+  background-color: red;
   color: #FFFFFF;
 }
 
 .btn-primary:hover {
-  background-color: #1E293B;
+  background-color: #1e293b;
   transform: translateY(-1px);
 }
 
 .btn-accent {
   background-color: var(--color-accent);
-  color: #FFFFFF;
+  color: #FFFFFF ;
 }
 
 .btn-accent:hover {
