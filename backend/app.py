@@ -257,12 +257,12 @@ def answer_endpoint():
         dom = answer.load_domain(domain)
     except (KeyError, ValueError):
         return error(f"unknown domain '{domain}'", 400)
-    missing = missing_cache(region, nasa_keys(dom))
+    missing = missing_cache(region, nasa_keys(dom)); missing = missing if len(missing) == len(nasa_keys(dom)) else []
     if missing:
         return cache_error(region, missing)
     box = tuple(REGIONS[region]["box"])
     try:
-        out = answer.build(domain, f"{REGIONS[region]['label']} box {box}", box, 1980, 2025)
+        out = answer.build(domain, f"{REGIONS[region]['label']} box {box}", box, 1980, 2025, is_cached=lambda k: cache_file(k, box) is not None)
     except FileNotFoundError as e:
         return error(str(e), 404)
     return jsonify(clean(out))
@@ -325,11 +325,11 @@ def ask_endpoint():
     if "region" in allowed:
         inputs.setdefault("region", label)
 
-    missing = missing_cache(region, nasa_keys(dom))
+    missing = missing_cache(region, nasa_keys(dom)); missing = missing if len(missing) == len(nasa_keys(dom)) else []
     if missing:
         return cache_error(region, missing)
     try:
-        out = answer.build(r.domain, label, box, 1980, 2025, user_inputs=inputs)
+        out = answer.build(r.domain, label, box, 1980, 2025, user_inputs=inputs, is_cached=lambda k: cache_file(k, box) is not None)
     except FileNotFoundError as e:
         return error(str(e), 404)
     text, rep = phrase.phrase_with_report(out, level)
@@ -350,14 +350,14 @@ def _followup_response(plan, level, note):
     label = REGIONS[region]["label"]
     box = tuple(REGIONS[region]["box"])
     dom = answer.load_domain(plan["domain"])
-    missing = missing_cache(region, nasa_keys(dom))
+    missing = missing_cache(region, nasa_keys(dom)); missing = missing if len(missing) == len(nasa_keys(dom)) else []
     if missing:
         return cache_error(region, missing)
     inputs = {}
     if any(a["name"] == "region" and a["source"] == "ask_user" for a in dom["axes"]):
         inputs["region"] = label
     try:
-        out = answer.build(plan["domain"], label, box, 1980, 2025, user_inputs=inputs)
+        out = answer.build(plan["domain"], label, box, 1980, 2025, user_inputs=inputs, is_cached=lambda k: cache_file(k, box) is not None)
     except FileNotFoundError as e:
         return error(str(e), 404)
 
