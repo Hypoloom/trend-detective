@@ -606,7 +606,7 @@ export const KNOWN_DATA_GAPS = [
     result: "Not yet clear",
     verdict: "not_significant",
     reason: "Not enough data yet",
-    explanation: "High natural year-to-year swings (±180 mm) hide the trend line.",
+    explanation: "High natural year-to-year swings hide the trend line (simulated example).",
     whatWouldSettleIt: "Many more years of consistent records (simulated example)."
   },
   {
@@ -618,7 +618,7 @@ export const KNOWN_DATA_GAPS = [
     result: "Not yet clear",
     verdict: "not_significant",
     reason: "Method limit",
-    explanation: "250m satellite pixels average out small newly-irrigated farmland plots.",
+    explanation: "Coarse 250m pixels would average out small newly-irrigated farmland plots (simulated example).",
     whatWouldSettleIt: "Daily readings or higher resolution (30m Landsat) instead of 250m monthly."
   },
   {
