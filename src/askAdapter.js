@@ -22,7 +22,7 @@ export const REGION_OPTIONS = [
 export const LIVE_CHIPS = [
   'Why is my pond turning green?',
   'My pond turned green',
-  'Why are my oranges so small this year?'
+  'Why are my oranges so small this year?', 'Is it getting hotter where I live?', 'Is the monsoon getting wetter or drier?', 'Are summers getting sunnier or cloudier?'
 ];
 
 // Short label chosen only from the backend's why.class.
@@ -58,8 +58,8 @@ function buildSeries(chart) {
 }
 
 // One /api/ask call per level, so the three tabs show backend text.
-export async function askAll(question, region = 'maharashtra') {
-  const res = await Promise.all(LEVELS.map((l) => askQuestion(question, l, region)));
+export async function askAll(question, region = 'maharashtra', context = null) {
+  const res = await Promise.all(LEVELS.map((l) => askQuestion(question, l, region, context)));
   const first = res[0];
   if (first.fallback) {
     return {
@@ -91,11 +91,11 @@ export async function askAll(question, region = 'maharashtra') {
   );
   const series = withChart ? buildSeries(withChart.result.chart) : [];
   const prov = withChart && withChart.result.provenance ? withChart.result.provenance : {};
-  const regionOption = REGION_OPTIONS.find((r) => r.id === region);
+  const regionOption = REGION_OPTIONS.find((r) => r.id === region); const shownOption = REGION_OPTIONS.find((r) => r.label === result.region) || regionOption; const shownRegion = shownOption ? shownOption.id : region;
   return {
     kind: 'answer',
     topic: first.domain,
-    regionId: region,
+    regionId: shownRegion,
     regionLabel: result.region || (regionOption ? regionOption.label : region),
     startYear: prov.start ? String(prov.start).slice(0, 4) : null,
     endYear: prov.end ? String(prov.end).slice(0, 4) : null,

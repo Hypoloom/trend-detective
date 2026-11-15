@@ -1,55 +1,318 @@
-{"domains": [
+{
+ "domains": [
   {
-    "id": "pond",
-    "description": "How long before a pond turns green with algae",
-    "example_questions": ["How long can I leave my pond unattended before algae?"],
-    "keywords": ["pond", "algae", "algal", "bloom", "scum", "green water", "green", "murky"],
-    "axes": [
-      {"name": "air_temp", "label": "Air temperature", "source": "nasa_data", "critical": false, "variable": "t2m",
-       "why_it_matters": "Checked from NASA data. Its effect on algae is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "rainfall", "label": "Rainfall", "source": "nasa_data", "critical": false, "variable": "precip",
-       "why_it_matters": "Checked from NASA data. Its effect on algae is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "sunlight", "label": "Sunlight", "source": "nasa_data", "critical": false, "variable": "sunlight",
-       "why_it_matters": "Checked from NASA data when available. Its effect on algae is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "shade", "label": "Shade over the pond", "source": "ask_user", "critical": false,
-       "prompt": "How much of the pond is shaded?",
-       "why_it_matters": "Only you can tell us this. Its effect is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "pond_size", "label": "Pond size", "source": "ask_user", "critical": false,
-       "prompt": "Roughly how big is the pond?",
-       "why_it_matters": "Only you can tell us this. Its effect is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "nutrient_load", "label": "Nutrient load", "source": "not_knowable", "critical": true,
-       "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"},
-      {"name": "existing_algae", "label": "Algae already present", "source": "not_knowable", "critical": true,
-       "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"}
-    ],
-    "risk_window_rule": {"axis": "air_temp", "n_months": 3, "direction": "highest",
-                         "definition": "The 3 calendar months with the highest average air temperature in this record. This is a simple project choice, not a sourced rule."},
-    "abstain_policy": "If any critical axis is not analyzed, give a risk window and no number of days."
+   "id": "pond",
+   "description": "How long before a pond turns green with algae",
+   "example_questions": [
+    "How long can I leave my pond unattended before algae?"
+   ],
+   "keywords": [
+    "pond",
+    "algae",
+    "algal",
+    "bloom",
+    "scum",
+    "green water",
+    "green",
+    "murky"
+   ],
+   "axes": [
+    {
+     "name": "air_temp",
+     "label": "Air temperature",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "t2m",
+     "why_it_matters": "Checked from NASA data. Its effect on algae is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "rainfall",
+     "label": "Rainfall",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "precip",
+     "why_it_matters": "Checked from NASA data. Its effect on algae is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "sunlight",
+     "label": "Sunlight",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "sunlight",
+     "why_it_matters": "Checked from NASA data when available. Its effect on algae is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "shade",
+     "label": "Shade over the pond",
+     "source": "ask_user",
+     "critical": false,
+     "prompt": "How much of the pond is shaded?",
+     "why_it_matters": "Only you can tell us this. Its effect is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "pond_size",
+     "label": "Pond size",
+     "source": "ask_user",
+     "critical": false,
+     "prompt": "Roughly how big is the pond?",
+     "why_it_matters": "Only you can tell us this. Its effect is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "nutrient_load",
+     "label": "Nutrient load",
+     "source": "not_knowable",
+     "critical": true,
+     "why_it_matters": "Not available from satellite or model data.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "existing_algae",
+     "label": "Algae already present",
+     "source": "not_knowable",
+     "critical": true,
+     "why_it_matters": "Not available from satellite or model data.",
+     "evidence_status": "UNVERIFIED"
+    }
+   ],
+   "risk_window_rule": {
+    "axis": "air_temp",
+    "n_months": 3,
+    "direction": "highest",
+    "definition": "The 3 calendar months with the highest average air temperature in this record. This is a simple project choice, not a sourced rule."
+   },
+   "abstain_policy": "If any critical axis is not analyzed, give a risk window and no number of days."
   },
   {
-    "id": "citrus",
-    "description": "Why oranges (citrus fruit) are small",
-    "example_questions": ["Why are my oranges so small this year?"],
-    "keywords": ["citrus", "orange", "oranges", "lemon", "mandarin", "fruit", "orchard", "grove", "small oranges", "small", "tiny", "size", "fruit size"],
-    "axes": [
-      {"name": "region", "label": "Where the trees are", "source": "ask_user", "critical": true,
-       "prompt": "Which region are the trees in?",
-       "why_it_matters": "Climate data is only meaningful for a specific place.", "evidence_status": "UNVERIFIED"},
-      {"name": "air_temp", "label": "Air temperature", "source": "nasa_data", "critical": false, "variable": "t2m",
-       "why_it_matters": "Checked from NASA data. Its effect on fruit size is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "rainfall", "label": "Rainfall", "source": "nasa_data", "critical": false, "variable": "precip",
-       "why_it_matters": "Checked from NASA data. Its effect on fruit size is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "sunlight", "label": "Sunlight", "source": "nasa_data", "critical": false, "variable": "sunlight",
-       "why_it_matters": "Checked from NASA data when available. Its effect on fruit size is not sourced here.", "evidence_status": "UNVERIFIED"},
-      {"name": "irrigation", "label": "Irrigation", "source": "not_knowable", "critical": true,
-       "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"},
-      {"name": "crop_load", "label": "Amount of fruit on the trees", "source": "not_knowable", "critical": true,
-       "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"},
-      {"name": "rootstock_variety", "label": "Rootstock and variety", "source": "not_knowable", "critical": false,
-       "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"},
-      {"name": "fertilizer", "label": "Fertilizer", "source": "not_knowable", "critical": false,
-       "why_it_matters": "Not available from satellite or model data.", "evidence_status": "UNVERIFIED"}
-    ],
-    "abstain_policy": "The data cannot say why fruit is small. Report climate trends only and abstain on the cause."
+   "id": "citrus",
+   "description": "Why oranges (citrus fruit) are small",
+   "example_questions": [
+    "Why are my oranges so small this year?"
+   ],
+   "keywords": [
+    "citrus",
+    "orange",
+    "oranges",
+    "lemon",
+    "mandarin",
+    "fruit",
+    "orchard",
+    "grove",
+    "small oranges",
+    "small",
+    "tiny",
+    "size",
+    "fruit size"
+   ],
+   "axes": [
+    {
+     "name": "region",
+     "label": "Where the trees are",
+     "source": "ask_user",
+     "critical": true,
+     "prompt": "Which region are the trees in?",
+     "why_it_matters": "Climate data is only meaningful for a specific place.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "air_temp",
+     "label": "Air temperature",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "t2m",
+     "why_it_matters": "Checked from NASA data. Its effect on fruit size is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "rainfall",
+     "label": "Rainfall",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "precip",
+     "why_it_matters": "Checked from NASA data. Its effect on fruit size is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "sunlight",
+     "label": "Sunlight",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "sunlight",
+     "why_it_matters": "Checked from NASA data when available. Its effect on fruit size is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "irrigation",
+     "label": "Irrigation",
+     "source": "not_knowable",
+     "critical": true,
+     "why_it_matters": "Not available from satellite or model data.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "crop_load",
+     "label": "Amount of fruit on the trees",
+     "source": "not_knowable",
+     "critical": true,
+     "why_it_matters": "Not available from satellite or model data.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "rootstock_variety",
+     "label": "Rootstock and variety",
+     "source": "not_knowable",
+     "critical": false,
+     "why_it_matters": "Not available from satellite or model data.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "fertilizer",
+     "label": "Fertilizer",
+     "source": "not_knowable",
+     "critical": false,
+     "why_it_matters": "Not available from satellite or model data.",
+     "evidence_status": "UNVERIFIED"
+    }
+   ],
+   "abstain_policy": "The data cannot say why fruit is small. Report climate trends only and abstain on the cause."
+  },
+  {
+   "id": "heat",
+   "description": "Whether the air is getting hotter in a region",
+   "example_questions": [
+    "Is it getting hotter where I live?"
+   ],
+   "keywords": [
+    "hotter",
+    "getting hotter",
+    "warmer",
+    "getting warmer",
+    "warming",
+    "global warming",
+    "heat",
+    "hot",
+    "getting hot",
+    "temperature",
+    "heating up",
+    "be hotter",
+    "be warmer",
+    "is it hotter",
+    "it hotter",
+    "hotter than",
+    "too hot"
+   ],
+   "axes": [
+    {
+     "name": "air_temp",
+     "label": "Air temperature",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "t2m",
+     "why_it_matters": "Checked from NASA data. Its effect is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "night_temp",
+     "label": "Night-time air temperature",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "t2m_min",
+     "why_it_matters": "Checked from NASA data. Its effect is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    },
+    {
+     "name": "day_temp",
+     "label": "Day-time air temperature",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "t2m_max",
+     "why_it_matters": "Checked from NASA data. Its effect is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    }
+   ],
+   "abstain_policy": "Report whether the records show a change. Do not say why."
+  },
+  {
+   "id": "monsoon",
+   "description": "Whether rainfall is rising or falling in a region",
+   "example_questions": [
+    "Is the monsoon getting wetter or drier?"
+   ],
+   "keywords": [
+    "monsoon",
+    "rain",
+    "rainfall",
+    "rainy",
+    "wetter",
+    "drier",
+    "getting wetter",
+    "getting drier",
+    "drought",
+    "flood",
+    "precipitation",
+    "more rain",
+    "less rain",
+    "be wetter",
+    "be drier",
+    "will it rain",
+    "rain next",
+    "more rainfall",
+    "less rainfall"
+   ],
+   "axes": [
+    {
+     "name": "rainfall",
+     "label": "Rainfall",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "precip",
+     "why_it_matters": "Checked from NASA data. Its effect is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    }
+   ],
+   "abstain_policy": "Report whether the records show a change. Do not say why."
+  },
+  {
+   "id": "sunshine",
+   "description": "Whether sunlight reaching the ground is rising or falling",
+   "example_questions": [
+    "Are summers getting sunnier or cloudier?"
+   ],
+   "keywords": [
+    "sunny",
+    "sunnier",
+    "sunshine",
+    "cloudy",
+    "cloudier",
+    "sunlight",
+    "dimming",
+    "dimmer",
+    "brighter",
+    "getting sunnier",
+    "getting cloudier",
+    "sun",
+    "be sunnier",
+    "be cloudier",
+    "be brighter",
+    "more sunlight",
+    "less sunlight"
+   ],
+   "axes": [
+    {
+     "name": "sunlight",
+     "label": "Sunlight",
+     "source": "nasa_data",
+     "critical": false,
+     "variable": "sunlight",
+     "why_it_matters": "Checked from NASA data. Its effect is not sourced here.",
+     "evidence_status": "UNVERIFIED"
+    }
+   ],
+   "abstain_policy": "Report whether the records show a change. Do not say why."
   }
-]}
+ ]
+}

@@ -270,8 +270,10 @@ def answer_endpoint():
 
 @app.route("/api/ask", methods=["GET", "POST"])
 def ask_endpoint():
-    """Question in, phrased answer out. LLM off: router -> answer.build -> template phrase."""
+    """Question in, phrased answer out. LLM off: router -> answer.build -> template phrase.
+    If the router does not match and the frontend sent context, try follow-up rules."""
     import answer
+    import followup
     import phrase
     import router
     from fallback_form import form_to_text
@@ -293,9 +295,22 @@ def ask_endpoint():
     user_inputs = arg("user_inputs", {}) or {}
     if not isinstance(user_inputs, dict):
         return error("user_inputs must be an object", 400)
+    context = arg("context", None)
+    if context is not None and not isinstance(context, dict):
+        return error("context must be an object", 400)
+    if context is not None and context.get("region") not in REGIONS:
+        context = dict(context, region=None)
+
+    named = followup.region_in_text(question)
+    if named:
+        region = named
+    note = followup.forecast_note(question)
 
     r = router.route(question)
     if r.is_fallback:
+        plan = followup.plan(question, context, region)
+        if plan:
+            return _followup_response(plan, level, note)
         return jsonify(clean({"fallback": True, "reason": r.reason, "form": r.form,
                               "form_text": form_to_text(r.form), "used_llm": False}))
 
@@ -318,11 +333,60 @@ def ask_endpoint():
     except FileNotFoundError as e:
         return error(str(e), 404)
     text, rep = phrase.phrase_with_report(out, level)
+    if note:
+        text = note + "\n\n" + text
     return jsonify(clean({"fallback": False, "domain": r.domain, "confidence": r.confidence,
                           "route_source": r.source, "level": level, "text": text,
                           "used_llm": rep.source == "llm", "phrase_note": rep.note,
                           "abstained": out["abstained"], "result": out}))
 
+
+def _followup_response(plan, level, note):
+    """Rebuild the planned domain for the planned region, keep one axis if asked, phrase it with the templates."""
+    import answer
+    import phrase
+
+    region = plan["region"]
+    label = REGIONS[region]["label"]
+    box = tuple(REGIONS[region]["box"])
+    dom = answer.load_domain(plan["domain"])
+    missing = missing_cache(region, nasa_keys(dom))
+    if missing:
+        return cache_error(region, missing)
+    inputs = {}
+    if any(a["name"] == "region" and a["source"] == "ask_user" for a in dom["axes"]):
+        inputs["region"] = label
+    try:
+        out = answer.build(plan["domain"], label, box, 1980, 2025, user_inputs=inputs)
+    except FileNotFoundError as e:
+        return error(str(e), 404)
+
+    analyzed = [a for a in out["axes"] if a["status"] == "analyzed"]
+    focus = None
+    if plan["focus"]:
+        focus = next((a for a in analyzed if a["name"] == plan["focus"]), None)
+    elif plan["pick"] == "not_detected":
+        focus = next((a for a in analyzed if a["result"]["verdict"]["code"] != "detected"), None)
+        focus = focus or (analyzed[0] if analyzed else None)
+    elif plan["pick"] == "first":
+        focus = analyzed[0] if analyzed else None
+
+    shown = out
+    if focus is not None:
+        shown = dict(out)
+        shown["axes"] = [focus]
+        shown["abstained"] = False
+        shown["abstain_reason"] = ""
+        shown["tested_count"] = 1
+        shown.pop("risk_window", None)
+    text, rep = phrase.phrase_with_report(shown, level)
+    lead = "\n\n".join(x for x in (note, plan["lead"]) if x)
+    if lead:
+        text = lead + "\n\n" + text
+    return jsonify(clean({"fallback": False, "followup": True, "intent": plan["intent"],
+                          "domain": plan["domain"], "confidence": 1.0, "route_source": "followup",
+                          "level": level, "text": text, "used_llm": rep.source == "llm",
+                          "phrase_note": rep.note, "abstained": shown["abstained"], "result": shown}))
 
 if __name__ == "__main__":
     # debug=True restarts the server when you edit a file. Turn it off for the demo.
