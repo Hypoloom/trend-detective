@@ -43,7 +43,8 @@ const TOPIC_LABELS = {
   sunshine: 'Sunshine',
   year_vs_record: 'This year compared with the record',
   region_compare: 'Region comparison',
-  season: 'Season trend'
+  season: 'Season trend',
+  diurnal: 'Day compared with night'
 };
 
 const isNum = (x) => typeof x === 'number' && Number.isFinite(x);

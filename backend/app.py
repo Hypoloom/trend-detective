@@ -324,6 +324,23 @@ def ask_endpoint():
                               "used_llm": False, "phrase_note": "LLM off", "abstained": False,
                               "result": yres}))
 
+    import diurnal
+
+    def _di_get(key, reg):
+        ds = {"t2m_min": "T2M_MIN", "t2m_max": "T2M_MAX"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    di = diurnal.answer(question, region, _di_get, level)
+    if di:
+        return jsonify(clean({"fallback": False, "domain": "diurnal", "confidence": 1.0,
+                              "route_source": "diurnal", "level": level, "text": di["text"],
+                              "used_llm": False, "phrase_note": di["phrase_note"], "abstained": False,
+                              "result": di["result"]}))
+
     import season
 
     def _se_get(key, reg):
