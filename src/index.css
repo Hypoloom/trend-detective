@@ -344,7 +344,7 @@ p {
 }
 
 .btn-primary {
-  background-color: var(--color-text-main);
+  background-color: var(--color-accent);
   color: #FFFFFF;
 }
 
