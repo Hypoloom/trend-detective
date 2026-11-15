@@ -324,6 +324,25 @@ def ask_endpoint():
                               "used_llm": False, "phrase_note": "LLM off", "abstained": False,
                               "result": yres}))
 
+    import regioncompare
+
+    def _rc_get(key, reg):
+        ds = {"t2m": "T2M", "precip": "PRECIP", "sunlight": "SUNLIGHT",
+              "t2m_min": "T2M_MIN", "t2m_max": "T2M_MAX"}.get(key)
+        try:
+            s = get_series(ds, reg)
+        except CacheMissing:
+            return None
+        return s if isinstance(s, pd.Series) else None
+
+    rc = regioncompare.answer(question, _rc_get, level)
+    if rc:
+        rres = dict(rc["result"], axes=[], risk_window=None)
+        return jsonify(clean({"fallback": False, "domain": "region_compare", "confidence": 1.0,
+                              "route_source": "regioncompare", "level": level, "text": rc["text"],
+                              "used_llm": False, "phrase_note": "LLM off", "abstained": False,
+                              "result": rres}))
+
     r = router.route(question)
     if r.is_fallback:
         plan = followup.plan(question, context, region)
